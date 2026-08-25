@@ -15,8 +15,9 @@ model User {
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
   identityProfile IdentityProfile?
-  documents      Document[]
-  auditLogs      AuditLog[]
+  documents       Document[]
+  auditLogs       AuditLog[]
+  sharesCreated   DocumentShare[] @relation("ShareCreator")
 
   @@map("users")
 }
@@ -35,14 +36,15 @@ model IdentityProfile {
 }
 
 model Document {
-  id           String         @id @default(uuid()) @db.Uuid
-  userId       String         @map("user_id") @db.Uuid
-  documentType DocumentType   @map("document_type")
-  status       DocumentStatus @default(PENDING)
-  createdAt    DateTime       @default(now()) @map("created_at")
-  updatedAt    DateTime       @updatedAt @map("updated_at")
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String            @id @default(uuid()) @db.Uuid
+  userId       String            @map("user_id") @db.Uuid
+  documentType DocumentType      @map("document_type")
+  status       DocumentStatus    @default(PENDING)
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   versions     DocumentVersion[]
+  shares       DocumentShare[]
 
   @@index([userId])
   @@map("documents")
@@ -58,6 +60,22 @@ model DocumentVersion {
 
   @@index([documentId])
   @@map("document_versions")
+}
+
+model DocumentShare {
+  id          String    @id @default(uuid()) @db.Uuid
+  documentId  String    @map("document_id") @db.Uuid
+  createdById String    @map("created_by_id") @db.Uuid
+  tokenHash   String    @unique @map("token_hash") @db.Char(64)
+  expiresAt   DateTime  @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdBy   User      @relation("ShareCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([expiresAt])
+  @@map("document_shares")
 }
 
 model AuditLog {
