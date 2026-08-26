@@ -1,13 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { DocumentType } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 
 export type CreateDocumentInput = {
-  type: string;
+  type: DocumentType;
   title: string;
   issuer?: string;
   documentNumber?: string;
   expiresAt?: string;
   storageKey: string;
+  contentHash: string;
+  algorithm?: string;
+  iv: string;
+  authTag: string;
 };
 
 @Injectable()
@@ -20,13 +25,15 @@ export class DocumentsService {
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
-        type: true,
+        documentType: true,
         title: true,
         issuer: true,
         documentNumber: true,
         expiresAt: true,
+        status: true,
         createdAt: true,
         updatedAt: true,
+        versions: { orderBy: { createdAt: 'desc' }, take: 1, select: { id: true, createdAt: true } },
       },
     });
   }
@@ -34,17 +41,7 @@ export class DocumentsService {
   async getForUser(userId: string, documentId: string) {
     const document = await this.prisma.document.findFirst({
       where: { id: documentId, userId },
-      select: {
-        id: true,
-        type: true,
-        title: true,
-        issuer: true,
-        documentNumber: true,
-        expiresAt: true,
-        storageKey: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      include: { versions: { orderBy: { createdAt: 'desc' } } },
     });
     if (!document) throw new NotFoundException('Document not found');
     return document;
@@ -54,13 +51,22 @@ export class DocumentsService {
     return this.prisma.document.create({
       data: {
         userId,
-        type: input.type,
+        documentType: input.type,
         title: input.title,
         issuer: input.issuer,
         documentNumber: input.documentNumber,
         expiresAt: input.expiresAt ? new Date(input.expiresAt) : undefined,
-        storageKey: input.storageKey,
+        versions: {
+          create: {
+            storageKey: input.storageKey,
+            contentHash: input.contentHash,
+            algorithm: input.algorithm ?? 'aes-256-gcm',
+            iv: input.iv,
+            authTag: input.authTag,
+          },
+        },
       },
+      include: { versions: true },
     });
   }
 }
