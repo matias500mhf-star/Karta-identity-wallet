@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String          @id @default(uuid()) @db.Uuid
+  email           String          @unique @db.VarChar(320)
+  passwordHash    String          @map("password_hash")
+  status          UserStatus      @default(ACTIVE)
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  identityProfile IdentityProfile?
+  documents       Document[]
+  auditLogs       AuditLog[]
+  sharesCreated   DocumentShare[] @relation("ShareCreator")
+
+  @@map("users")
+}
+
+model IdentityProfile {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @unique @map("user_id") @db.Uuid
+  firstName   String?  @map("first_name")
+  lastName    String?  @map("last_name")
+  countryCode String?  @map("country_code") @db.Char(2)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("identity_profiles")
+}
+
+model Document {
+  id             String            @id @default(uuid()) @db.Uuid
+  userId         String            @map("user_id") @db.Uuid
+  documentType   DocumentType      @map("document_type")
+  title          String            @db.VarChar(160)
+  issuer         String?           @db.VarChar(160)
+  documentNumber String?           @map("document_number") @db.VarChar(160)
+  expiresAt      DateTime?         @map("expires_at")
+  status         DocumentStatus    @default(PENDING)
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions       DocumentVersion[]
+  shares         DocumentShare[]
+
+  @@index([userId])
+  @@index([userId, status])
+  @@map("documents")
+}
+
+model DocumentVersion {
+  id          String   @id @default(uuid()) @db.Uuid
+  documentId  String   @map("document_id") @db.Uuid
+  storageKey  String   @map("storage_key")
+  contentHash String   @map("content_hash") @db.Char(64)
+  algorithm   String   @default("aes-256-gcm") @db.VarChar(32)
+  iv          String   @db.VarChar(64)
+  authTag     String   @map("auth_tag") @db.VarChar(64)
+  createdAt   DateTime @default(now()) @map("created_at")
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@map("document_versions")
+}
+
+model DocumentShare {
+  id          String    @id @default(uuid()) @db.Uuid
+  documentId  String    @map("document_id") @db.Uuid
+  createdById String    @map("created_by_id") @db.Uuid
+  tokenHash   String    @unique @map("token_hash") @db.Char(64)
+  expiresAt   DateTime  @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  document    Document  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  createdBy   User      @relation("ShareCreator", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([expiresAt])
+  @@map("document_shares")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  resource   String?  @db.VarChar(100)
+  resourceId String?  @map("resource_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@map("audit_logs")
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum DocumentType {
+  NATIONAL_ID
+  PASSPORT
+  DRIVERS_LICENSE
+  RESIDENCE_PERMIT
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+  REVOKED
+}
