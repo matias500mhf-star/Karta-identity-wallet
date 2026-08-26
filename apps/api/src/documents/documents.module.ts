@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DocumentsController } from './documents.controller';
+import { ShareController } from './share.controller';
 import { DocumentsService } from './documents.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { FileSecurityService } from './file-security.service';
@@ -9,7 +10,7 @@ import { ShareService } from './share.service';
 import { ShareTokenService } from './share-token.service';
 
 @Module({
-  controllers: [DocumentsController],
+  controllers: [DocumentsController, ShareController],
   providers: [
     DocumentsService,
     AuthGuard,
