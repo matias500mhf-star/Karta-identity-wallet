@@ -5,9 +5,9 @@ import { PrismaService } from '../database/prisma.service';
 export class AuditService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async record(userId: string, action: string, entityType: string, entityId?: string) {
+  async record(userId: string | null, action: string, resource?: string, resourceId?: string) {
     return this.prisma.auditLog.create({
-      data: { userId, action, entityType, entityId },
+      data: { userId, action, resource, resourceId },
     });
   }
 }
