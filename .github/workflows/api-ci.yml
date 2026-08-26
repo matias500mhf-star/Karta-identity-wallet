@@ -27,4 +27,4 @@ jobs:
       - run: npx prisma validate
       - run: npx prisma generate
       - run: npm run build
-      - run: npm test -- --runInBand
+      - run: npx jest --runInBand --config jest.config.cjs
