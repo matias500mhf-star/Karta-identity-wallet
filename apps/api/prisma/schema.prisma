@@ -36,17 +36,22 @@ model IdentityProfile {
 }
 
 model Document {
-  id           String            @id @default(uuid()) @db.Uuid
-  userId       String            @map("user_id") @db.Uuid
-  documentType DocumentType      @map("document_type")
-  status       DocumentStatus    @default(PENDING)
-  createdAt    DateTime          @default(now()) @map("created_at")
-  updatedAt    DateTime          @updatedAt @map("updated_at")
-  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  versions     DocumentVersion[]
-  shares       DocumentShare[]
+  id             String            @id @default(uuid()) @db.Uuid
+  userId         String            @map("user_id") @db.Uuid
+  documentType   DocumentType      @map("document_type")
+  title          String            @db.VarChar(160)
+  issuer         String?           @db.VarChar(160)
+  documentNumber String?           @map("document_number") @db.VarChar(160)
+  expiresAt      DateTime?         @map("expires_at")
+  status         DocumentStatus    @default(PENDING)
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions       DocumentVersion[]
+  shares         DocumentShare[]
 
   @@index([userId])
+  @@index([userId, status])
   @@map("documents")
 }
 
@@ -54,7 +59,10 @@ model DocumentVersion {
   id          String   @id @default(uuid()) @db.Uuid
   documentId  String   @map("document_id") @db.Uuid
   storageKey  String   @map("storage_key")
-  contentHash String   @map("content_hash")
+  contentHash String   @map("content_hash") @db.Char(64)
+  algorithm   String   @default("aes-256-gcm") @db.VarChar(32)
+  iv          String   @db.VarChar(64)
+  authTag     String   @map("auth_tag") @db.VarChar(64)
   createdAt   DateTime @default(now()) @map("created_at")
   document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
