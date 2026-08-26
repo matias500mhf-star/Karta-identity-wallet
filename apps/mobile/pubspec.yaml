@@ -1,0 +1,17 @@
+name: karta_wallet
+description: KARTA Identity Wallet mobile application.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.2
+  flutter_secure_storage: ^9.2.2
+  cupertino_icons: ^1.0.8
+
+flutter:
+  uses-material-design: true
