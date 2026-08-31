@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "KARTA (Debug)",
+      "request": "launch",
+      "type": "dart"
+    },
+    {
+      "name": "KARTA (Profile)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile"
+    }
+  ]
+}
