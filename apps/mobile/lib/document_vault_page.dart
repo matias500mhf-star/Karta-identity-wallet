@@ -1,7 +1,7 @@
 import 'brand_theme.dart';
 import 'dart:typed_data';
 
-import 'package:file_picker/file_picker.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -175,19 +175,30 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
   }
 
   Future<void> _pickAttachment() async {
-    final file = await FilePicker.pickFile(
-      type: FileType.custom,
-      allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png'],
-    );
-    if (file == null) return;
-    final bytes = await file.readAsBytes();
-    if (!mounted) return;
-    final ext = (file.extension ?? '').toLowerCase();
-    setState(() {
-      attachment = bytes;
-      attachmentName = file.name;
-      attachmentMime = ext == 'pdf' ? 'application/pdf' : 'image/$ext';
-    });
+    try {
+      final file = await openFile(acceptedTypeGroups: const [
+        XTypeGroup(
+          label: 'PDF e imagens',
+          extensions: ['pdf', 'jpg', 'jpeg', 'png'],
+          mimeTypes: ['application/pdf', 'image/jpeg', 'image/png'],
+          uniformTypeIdentifiers: ['com.adobe.pdf', 'public.jpeg', 'public.png'],
+        ),
+      ]);
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
+      if (!mounted) return;
+      final ext = file.name.split('.').last.toLowerCase();
+      setState(() {
+        attachment = bytes;
+        attachmentName = file.name;
+        attachmentMime = ext == 'pdf' ? 'application/pdf' : ext == 'png' ? 'image/png' : 'image/jpeg';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível abrir o anexo. Tente novamente.')),
+      );
+    }
   }
 
   Future<void> _save() async {
