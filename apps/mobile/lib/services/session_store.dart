@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SessionStore {
@@ -22,8 +24,26 @@ class SessionStore {
   Future<bool> verifyPin(String pin) async =>
       (await _storage.read(key: _pinKey)) == pin;
 
-  Future<String> walletName() async =>
-      await _storage.read(key: _nameKey) ?? 'A minha KARTA';
+  Future<Map<String, String>> readProfile() async {
+    final raw = await _storage.read(key: 'karta.profile.v1');
+    if (raw == null) return {};
+    return Map<String, String>.from(jsonDecode(raw) as Map);
+  }
+
+  Future<void> saveProfile({required String name, required String nationality}) {
+    if (name.trim().isEmpty || name.trim().length > 120 || nationality.trim().length > 80) {
+      throw ArgumentError('Perfil inválido.');
+    }
+    return _storage.write(
+      key: 'karta.profile.v1',
+      value: jsonEncode({'name': name.trim(), 'nationality': nationality.trim()}),
+    );
+  }
+
+  Future<String> walletName() async {
+    final profile = await readProfile();
+    return profile['name'] ?? await _storage.read(key: _nameKey) ?? 'A minha KARTA';
+  }
 
   Future<void> deleteWallet() => _storage.deleteAll();
 }
