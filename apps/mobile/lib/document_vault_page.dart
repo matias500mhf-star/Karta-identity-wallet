@@ -1,3 +1,4 @@
+import 'brand_theme.dart';
 import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
@@ -64,7 +65,7 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
           const SizedBox(height: 8),
           const Text(
             'Guarde cópias digitais cifradas de documentos neste dispositivo. Estas cópias não são documentos oficiais verificados.',
-            style: TextStyle(color: Colors.black54, height: 1.45),
+            style: TextStyle(color: HmatiasBrand.muted, height: 1.45),
           ),
           const SizedBox(height: 18),
           FilledButton.icon(
@@ -381,7 +382,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                 const SizedBox(height: 12),
                 const Text(
                   'Esta cópia serve apenas para armazenamento privado e consulta. Não substitui o documento físico nem uma credencial digital emitida por autoridade competente.',
-                  style: TextStyle(color: Colors.black54, height: 1.45),
+                  style: TextStyle(color: HmatiasBrand.muted, height: 1.45),
                 ),
               ],
             ),

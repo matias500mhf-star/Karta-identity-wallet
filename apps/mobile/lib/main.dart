@@ -1,3 +1,4 @@
+import 'brand_theme.dart';
 import 'package:flutter/material.dart';
 
 import 'document_vault_page.dart';
@@ -16,12 +17,7 @@ class KartaApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'KARTA',
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF7F8FA),
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF111827)),
-        inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder()),
-      ),
+      theme: HmatiasBrand.theme,
       home: const WalletGate(),
     );
   }
@@ -80,19 +76,13 @@ class _WelcomePageState extends State<WelcomePage> {
           padding: const EdgeInsets.all(28),
           children: [
             const SizedBox(height: 60),
-            Container(
-              width: 72,
-              height: 72,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(22)),
-              child: const Text('K', style: TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900)),
-            ),
+            const KartaBrandHeader(),
             const SizedBox(height: 28),
             const Text('A sua identidade. Na sua KARTA.', style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900)),
             const SizedBox(height: 12),
             const Text(
               'Carteira local para credenciais de teste e cópias digitais cifradas de documentos.',
-              style: TextStyle(color: Colors.black54, fontSize: 17, height: 1.45),
+              style: TextStyle(color: HmatiasBrand.muted, fontSize: 17, height: 1.45),
             ),
             const SizedBox(height: 24),
             const _Feature(icon: Icons.lock_outline, text: 'Protegida por PIN no dispositivo'),
@@ -116,7 +106,7 @@ class _WelcomePageState extends State<WelcomePage> {
               child: const Text('Criar a minha KARTA'),
             ),
             const SizedBox(height: 12),
-            const Text('KARTA Alpha 0.5 · Document Vault', textAlign: TextAlign.center, style: TextStyle(color: Colors.black45, fontSize: 12)),
+            const Text('KARTA Alpha 0.5.1 · Document Vault', textAlign: TextAlign.center, style: TextStyle(color: HmatiasBrand.muted, fontSize: 12)),
           ],
         ),
       ),
@@ -186,7 +176,7 @@ class _CreatePinPageState extends State<CreatePinPage> {
             children: [
               const Text('Proteja a sua KARTA', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w900)),
               const SizedBox(height: 10),
-              const Text('Este PIN desbloqueia a carteira neste dispositivo.', style: TextStyle(color: Colors.black54)),
+              const Text('Este PIN desbloqueia a carteira neste dispositivo.', style: TextStyle(color: HmatiasBrand.muted)),
               const SizedBox(height: 28),
               TextField(controller: pin, keyboardType: TextInputType.number, obscureText: true, maxLength: 6, decoration: const InputDecoration(labelText: 'PIN de 6 dígitos')),
               const SizedBox(height: 12),
@@ -319,7 +309,7 @@ class _WalletPageState extends State<WalletPage> {
         selectedIndex: index,
         onDestinationSelected: (value) => setState(() => index = value),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), selectedIcon: Icon(Icons.account_balance_wallet), label: 'Wallet'),
+          NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), selectedIcon: Icon(Icons.account_balance_wallet), label: 'Carteira'),
           NavigationDestination(icon: Icon(Icons.folder_copy_outlined), selectedIcon: Icon(Icons.folder_copy), label: 'Documentos'),
           NavigationDestination(icon: Icon(Icons.qr_code_scanner_outlined), selectedIcon: Icon(Icons.qr_code_scanner), label: 'Verificar'),
           NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Definições'),
@@ -335,11 +325,11 @@ class _WalletPageState extends State<WalletPage> {
         padding: const EdgeInsets.all(20),
         children: [
           const SizedBox(height: 8),
-          const Text('KARTA', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1.6)),
+          const Text('KARTA · HMATIAS', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1.6)),
           const SizedBox(height: 18),
           Container(
             padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(28)),
+            decoration: BoxDecoration(color: HmatiasBrand.navy, borderRadius: BorderRadius.circular(28)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -365,7 +355,7 @@ class _WalletPageState extends State<WalletPage> {
           const SizedBox(height: 10),
           OutlinedButton.icon(onPressed: () => setState(() => index = 1), icon: const Icon(Icons.document_scanner_outlined), label: const Text('Abrir cofre de documentos')),
           const SizedBox(height: 10),
-          const Text('Credenciais e documentos desta Alpha são locais e não representam validação por uma entidade emissora.', textAlign: TextAlign.center, style: TextStyle(color: Colors.black45, fontSize: 12, height: 1.4)),
+          const Text('Credenciais e documentos desta Alpha são locais e não representam validação por uma entidade emissora.', textAlign: TextAlign.center, style: TextStyle(color: HmatiasBrand.muted, fontSize: 12, height: 1.4)),
         ],
       ),
     );
@@ -393,6 +383,8 @@ class _WalletPageState extends State<WalletPage> {
       padding: const EdgeInsets.all(20),
       children: [
         const SizedBox(height: 18),
+        const KartaBrandHeader(),
+        const SizedBox(height: 24),
         const Text('Definições', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
         const SizedBox(height: 20),
         Card(child: ListTile(
@@ -410,7 +402,7 @@ class _WalletPageState extends State<WalletPage> {
         const Card(child: ListTile(leading: Icon(Icons.fingerprint), title: Text('Biometria'), subtitle: Text('Prevista para uma próxima versão'))),
         const Card(child: ListTile(leading: Icon(Icons.cloud_off_outlined), title: Text('Modo local'), subtitle: Text('A Alpha funciona sem conta online'))),
         const Card(child: ListTile(leading: Icon(Icons.lock_outline), title: Text('Document Vault'), subtitle: Text('Ficheiros cifrados com AES-GCM no armazenamento privado da app'))),
-        const Card(child: ListTile(leading: Icon(Icons.info_outline), title: Text('KARTA Alpha 0.5'), subtitle: Text('Local Identity Wallet + Document Vault'))),
+        const Card(child: ListTile(leading: Icon(Icons.info_outline), title: Text('KARTA Alpha 0.5.1'), subtitle: Text('Local Identity Wallet + Document Vault'))),
         const SizedBox(height: 18),
         OutlinedButton.icon(onPressed: () => Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute<void>(builder: (_) => UnlockPage(store: widget.store)), (_) => false), icon: const Icon(Icons.lock_outline), label: const Text('Bloquear KARTA')),
         const SizedBox(height: 10),
@@ -483,7 +475,7 @@ class _AddCredentialPageState extends State<AddCredentialPage> {
         children: [
           const Text('Registo local de teste', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
           const SizedBox(height: 10),
-          const Text('Este registo é manual, local e não verificado por uma entidade emissora.', style: TextStyle(color: Colors.black54)),
+          const Text('Este registo é manual, local e não verificado por uma entidade emissora.', style: TextStyle(color: HmatiasBrand.muted)),
           const SizedBox(height: 24),
           DropdownButtonFormField<String>(initialValue: type, decoration: const InputDecoration(labelText: 'Tipo'), items: types.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(), onChanged: (value) => setState(() => type = value ?? types.first)),
           const SizedBox(height: 14),
