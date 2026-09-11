@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'services/credential_store.dart';
 import 'services/session_store.dart';
 
 void main() => runApp(const KartaApp());
@@ -51,16 +52,17 @@ class _WalletGateState extends State<WalletGate> {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
-    return created
-        ? UnlockPage(store: store)
-        : WelcomePage(store: store);
+    return created ? UnlockPage(store: store) : WelcomePage(store: store);
   }
 }
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key, required this.store});
+
   final SessionStore store;
 
   @override
@@ -101,12 +103,25 @@ class WelcomePage extends StatelessWidget {
               const SizedBox(height: 12),
               const Text(
                 'Crie uma carteira digital protegida neste dispositivo. Não precisa de conta, email ou ligação a um servidor para começar.',
-                style: TextStyle(color: Colors.black54, fontSize: 17, height: 1.45),
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontSize: 17,
+                  height: 1.45,
+                ),
               ),
               const SizedBox(height: 28),
-              const _Feature(icon: Icons.lock_outline, text: 'Protegida por PIN no dispositivo'),
-              const _Feature(icon: Icons.badge_outlined, text: 'Preparada para credenciais digitais'),
-              const _Feature(icon: Icons.qr_code_rounded, text: 'Partilha e verificação por QR Code em evolução'),
+              const _Feature(
+                icon: Icons.lock_outline,
+                text: 'Protegida por PIN no dispositivo',
+              ),
+              const _Feature(
+                icon: Icons.badge_outlined,
+                text: 'Credenciais de teste guardadas localmente',
+              ),
+              const _Feature(
+                icon: Icons.cloud_off_outlined,
+                text: 'Funciona sem conta online nesta fase Alpha',
+              ),
               const Spacer(),
               FilledButton(
                 onPressed: () {
@@ -116,12 +131,14 @@ class WelcomePage extends StatelessWidget {
                     ),
                   );
                 },
-                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                ),
                 child: const Text('Criar a minha KARTA'),
               ),
               const SizedBox(height: 10),
               const Text(
-                'KARTA Alpha · carteira local experimental',
+                'KARTA Alpha 0.3 · carteira local experimental',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.black45, fontSize: 12),
               ),
@@ -135,6 +152,7 @@ class WelcomePage extends StatelessWidget {
 
 class _Feature extends StatelessWidget {
   const _Feature({required this.icon, required this.text});
+
   final IconData icon;
   final String text;
 
@@ -146,7 +164,12 @@ class _Feature extends StatelessWidget {
         children: [
           Icon(icon),
           const SizedBox(width: 12),
-          Expanded(child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700))),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
         ],
       ),
     );
@@ -155,6 +178,7 @@ class _Feature extends StatelessWidget {
 
 class TermsPage extends StatefulWidget {
   const TermsPage({super.key, required this.store});
+
   final SessionStore store;
 
   @override
@@ -180,14 +204,16 @@ class _TermsPageState extends State<TermsPage> {
               ),
               const SizedBox(height: 14),
               const Text(
-                'Nesta versão, a carteira é criada localmente no seu dispositivo. Ainda não substitui documentos oficiais e não deve ser usada como prova legal de identidade.',
+                'Nesta versão, a carteira e as credenciais de teste são guardadas localmente no dispositivo. A KARTA ainda não substitui documentos oficiais e estes registos não são credenciais verificadas por uma entidade emissora.',
                 style: TextStyle(fontSize: 16, height: 1.5),
               ),
               const SizedBox(height: 24),
               CheckboxListTile(
                 value: accepted,
                 contentPadding: EdgeInsets.zero,
-                onChanged: (value) => setState(() => accepted = value ?? false),
+                onChanged: (value) {
+                  setState(() => accepted = value ?? false);
+                },
                 title: const Text('Compreendo e quero continuar.'),
               ),
               const Spacer(),
@@ -201,7 +227,9 @@ class _TermsPageState extends State<TermsPage> {
                         );
                       }
                     : null,
-                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                ),
                 child: const Text('Continuar'),
               ),
             ],
@@ -214,6 +242,7 @@ class _TermsPageState extends State<TermsPage> {
 
 class CreatePinPage extends StatefulWidget {
   const CreatePinPage({super.key, required this.store});
+
   final SessionStore store;
 
   @override
@@ -247,13 +276,17 @@ class _CreatePinPageState extends State<CreatePinPage> {
     await widget.store.createWallet(pin: value);
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => WalletPage(store: widget.store)),
+      MaterialPageRoute<void>(
+        builder: (_) => WalletPage(store: widget.store),
+      ),
       (_) => false,
     );
   }
 
   void _error(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
@@ -281,7 +314,9 @@ class _CreatePinPageState extends State<CreatePinPage> {
                 keyboardType: TextInputType.number,
                 obscureText: true,
                 maxLength: 6,
-                decoration: const InputDecoration(labelText: 'PIN de 6 dígitos'),
+                decoration: const InputDecoration(
+                  labelText: 'PIN de 6 dígitos',
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -294,9 +329,15 @@ class _CreatePinPageState extends State<CreatePinPage> {
               const Spacer(),
               FilledButton(
                 onPressed: busy ? null : _create,
-                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                ),
                 child: busy
-                    ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Text('Criar carteira'),
               ),
             ],
@@ -309,6 +350,7 @@ class _CreatePinPageState extends State<CreatePinPage> {
 
 class UnlockPage extends StatefulWidget {
   const UnlockPage({super.key, required this.store});
+
   final SessionStore store;
 
   @override
@@ -328,7 +370,9 @@ class _UnlockPageState extends State<UnlockPage> {
     if (await widget.store.verifyPin(pin.text.trim())) {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute<void>(builder: (_) => WalletPage(store: widget.store)),
+        MaterialPageRoute<void>(
+          builder: (_) => WalletPage(store: widget.store),
+        ),
       );
       return;
     }
@@ -375,7 +419,9 @@ class _UnlockPageState extends State<UnlockPage> {
               const SizedBox(height: 14),
               FilledButton(
                 onPressed: _unlock,
-                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(56),
+                ),
                 child: const Text('Desbloquear'),
               ),
               const Spacer(),
@@ -389,6 +435,7 @@ class _UnlockPageState extends State<UnlockPage> {
 
 class WalletPage extends StatefulWidget {
   const WalletPage({super.key, required this.store});
+
   final SessionStore store;
 
   @override
@@ -396,8 +443,11 @@ class WalletPage extends StatefulWidget {
 }
 
 class _WalletPageState extends State<WalletPage> {
+  final credentialStore = CredentialStore();
   int index = 0;
   String walletName = 'A minha KARTA';
+  List<LocalCredential> credentials = [];
+  bool loadingCredentials = true;
 
   @override
   void initState() {
@@ -406,8 +456,38 @@ class _WalletPageState extends State<WalletPage> {
   }
 
   Future<void> _load() async {
-    final value = await widget.store.walletName();
-    if (mounted) setState(() => walletName = value);
+    final name = await widget.store.walletName();
+    final localCredentials = await credentialStore.list();
+    if (!mounted) return;
+    setState(() {
+      walletName = name;
+      credentials = localCredentials;
+      loadingCredentials = false;
+    });
+  }
+
+  Future<void> _addCredential() async {
+    final credential = await Navigator.of(context).push<LocalCredential>(
+      MaterialPageRoute<LocalCredential>(
+        builder: (_) => AddCredentialPage(store: credentialStore),
+      ),
+    );
+    if (credential == null || !mounted) return;
+    await _load();
+  }
+
+  Future<void> _openCredential(LocalCredential credential) async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => CredentialDetailsPage(
+          credential: credential,
+          store: credentialStore,
+        ),
+      ),
+    );
+    if (changed == true && mounted) {
+      await _load();
+    }
   }
 
   @override
@@ -440,56 +520,157 @@ class _WalletPageState extends State<WalletPage> {
   }
 
   Widget _wallet() {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const SizedBox(height: 8),
-        const Text('KARTA', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1.6)),
-        const SizedBox(height: 18),
-        Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(28)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          const SizedBox(height: 8),
+          const Text(
+            'KARTA',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.6,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'IDENTITY WALLET',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.4,
+                      ),
+                    ),
+                    Icon(Icons.shield_outlined, color: Colors.white),
+                  ],
+                ),
+                const SizedBox(height: 30),
+                Text(
+                  walletName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 23,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Carteira e registos protegidos localmente.',
+                  style: TextStyle(color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 26),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('IDENTITY WALLET', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w800, letterSpacing: 1.4)),
-                  Icon(Icons.shield_outlined, color: Colors.white),
-                ],
+              const Text(
+                'Credenciais',
+                style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900),
               ),
-              const SizedBox(height: 30),
-              Text(walletName, style: const TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 8),
-              const Text('Carteira criada e protegida localmente.', style: TextStyle(color: Colors.white70)),
+              Text(
+                '${credentials.length}',
+                style: const TextStyle(
+                  color: Colors.black54,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ],
           ),
-        ),
-        const SizedBox(height: 26),
-        const Text('Credenciais', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
-          child: const Column(
-            children: [
-              Icon(Icons.badge_outlined, size: 44),
-              SizedBox(height: 12),
-              Text('Ainda não existem credenciais.', style: TextStyle(fontWeight: FontWeight.w800)),
-              SizedBox(height: 6),
-              Text('A próxima etapa é permitir receber e guardar credenciais digitais verificáveis.', textAlign: TextAlign.center, style: TextStyle(color: Colors.black54)),
-            ],
+          const SizedBox(height: 10),
+          if (loadingCredentials)
+            const Padding(
+              padding: EdgeInsets.all(28),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (credentials.isEmpty)
+            _emptyCredentials()
+          else
+            ...credentials.map(_credentialCard),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: _addCredential,
+            icon: const Icon(Icons.add_card_outlined),
+            label: const Text('Adicionar credencial local'),
           ),
-        ),
-        const SizedBox(height: 18),
-        OutlinedButton.icon(
-          onPressed: null,
-          icon: const Icon(Icons.add_card_outlined),
-          label: const Text('Adicionar credencial — em breve'),
-        ),
-      ],
+          const SizedBox(height: 10),
+          const Text(
+            'Os registos desta Alpha são apenas dados locais de teste. Não representam validação por uma entidade emissora.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.black45, fontSize: 12, height: 1.4),
+          ),
+        ],
+      ),
     );
+  }
+
+  Widget _emptyCredentials() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: const Column(
+        children: [
+          Icon(Icons.badge_outlined, size: 44),
+          SizedBox(height: 12),
+          Text(
+            'Ainda não existem credenciais.',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Adicione um registo local de teste para experimentar a carteira.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _credentialCard(LocalCredential credential) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      child: ListTile(
+        onTap: () => _openCredential(credential),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: const CircleAvatar(
+          child: Icon(Icons.badge_outlined),
+        ),
+        title: Text(
+          credential.type,
+          style: const TextStyle(fontWeight: FontWeight.w900),
+        ),
+        subtitle: Text(
+          '${credential.issuer}\n${_maskedReference(credential.reference)}',
+        ),
+        isThreeLine: true,
+        trailing: const Icon(Icons.chevron_right_rounded),
+      ),
+    );
+  }
+
+  String _maskedReference(String value) {
+    if (value.length <= 4) return value;
+    return '•••• ${value.substring(value.length - 4)}';
   }
 
   Widget _profile() {
@@ -497,7 +678,10 @@ class _WalletPageState extends State<WalletPage> {
       padding: const EdgeInsets.all(20),
       children: [
         const SizedBox(height: 18),
-        const Text('Definições', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
+        const Text(
+          'Definições',
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+        ),
         const SizedBox(height: 20),
         const Card(
           child: ListTile(
@@ -511,21 +695,23 @@ class _WalletPageState extends State<WalletPage> {
           child: ListTile(
             leading: Icon(Icons.cloud_off_outlined),
             title: Text('Modo local'),
-            subtitle: Text('Esta versão não depende de conta online'),
+            subtitle: Text('A Alpha funciona sem conta online'),
           ),
         ),
         const Card(
           child: ListTile(
             leading: Icon(Icons.info_outline),
-            title: Text('KARTA Alpha 0.2'),
-            subtitle: Text('Digital Identity Wallet'),
+            title: Text('KARTA Alpha 0.3'),
+            subtitle: Text('Local Identity Wallet Test Build'),
           ),
         ),
         const SizedBox(height: 18),
         OutlinedButton.icon(
           onPressed: () {
             Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute<void>(builder: (_) => UnlockPage(store: widget.store)),
+              MaterialPageRoute<void>(
+                builder: (_) => UnlockPage(store: widget.store),
+              ),
               (_) => false,
             );
           },
@@ -534,31 +720,332 @@ class _WalletPageState extends State<WalletPage> {
         ),
         const SizedBox(height: 10),
         TextButton.icon(
-          onPressed: () async {
-            final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Apagar carteira local?'),
-                    content: const Text('Isto remove a KARTA criada neste dispositivo.'),
-                    actions: [
-                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-                      FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Apagar')),
-                    ],
-                  ),
-                ) ??
-                false;
-            if (!confirmed) return;
-            await widget.store.deleteWallet();
-            if (!mounted) return;
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute<void>(builder: (_) => WelcomePage(store: widget.store)),
-              (_) => false,
-            );
-          },
+          onPressed: _deleteWallet,
           icon: const Icon(Icons.delete_outline),
           label: const Text('Apagar carteira deste dispositivo'),
         ),
       ],
+    );
+  }
+
+  Future<void> _deleteWallet() async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Apagar carteira local?'),
+            content: const Text(
+              'Isto remove a KARTA e todas as credenciais locais de teste deste dispositivo.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Apagar'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed) return;
+
+    await credentialStore.clear();
+    await widget.store.deleteWallet();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(
+        builder: (_) => WelcomePage(store: widget.store),
+      ),
+      (_) => false,
+    );
+  }
+}
+
+class AddCredentialPage extends StatefulWidget {
+  const AddCredentialPage({super.key, required this.store});
+
+  final CredentialStore store;
+
+  @override
+  State<AddCredentialPage> createState() => _AddCredentialPageState();
+}
+
+class _AddCredentialPageState extends State<AddCredentialPage> {
+  static const types = [
+    'Bilhete de Identidade',
+    'Passaporte',
+    'Carta de Condução',
+    'Cartão profissional',
+    'Outro',
+  ];
+
+  final issuer = TextEditingController();
+  final reference = TextEditingController();
+  String type = types.first;
+  bool busy = false;
+
+  @override
+  void dispose() {
+    issuer.dispose();
+    reference.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (issuer.text.trim().length < 2) {
+      _error('Indique a entidade ou origem do registo.');
+      return;
+    }
+    if (reference.text.trim().length < 3) {
+      _error('Indique uma referência com pelo menos 3 caracteres.');
+      return;
+    }
+
+    setState(() => busy = true);
+    final credential = await widget.store.add(
+      type: type,
+      issuer: issuer.text,
+      reference: reference.text,
+    );
+    if (!mounted) return;
+    Navigator.of(context).pop(credential);
+  }
+
+  void _error(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Adicionar credencial')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            const Text(
+              'Registo local de teste',
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Guarde apenas os dados necessários para testar a wallet. Este registo não é validado nem emitido pela entidade indicada.',
+              style: TextStyle(color: Colors.black54, height: 1.5),
+            ),
+            const SizedBox(height: 24),
+            DropdownButtonFormField<String>(
+              initialValue: type,
+              decoration: const InputDecoration(labelText: 'Tipo'),
+              items: types
+                  .map(
+                    (item) => DropdownMenuItem<String>(
+                      value: item,
+                      child: Text(item),
+                    ),
+                  )
+                  .toList(),
+              onChanged: busy
+                  ? null
+                  : (value) {
+                      if (value != null) setState(() => type = value);
+                    },
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: issuer,
+              enabled: !busy,
+              decoration: const InputDecoration(
+                labelText: 'Entidade / origem',
+                hintText: 'Ex.: entidade emissora',
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: reference,
+              enabled: !busy,
+              decoration: const InputDecoration(
+                labelText: 'Referência',
+                hintText: 'Número ou identificador de teste',
+              ),
+            ),
+            const SizedBox(height: 18),
+            const Card(
+              child: ListTile(
+                leading: Icon(Icons.lock_outline),
+                title: Text('Guardado no armazenamento seguro'),
+                subtitle: Text(
+                  'A KARTA Alpha não envia este registo para um servidor.',
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: busy ? null : _save,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(56),
+              ),
+              child: busy
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Guardar na KARTA'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class CredentialDetailsPage extends StatelessWidget {
+  const CredentialDetailsPage({
+    super.key,
+    required this.credential,
+    required this.store,
+  });
+
+  final LocalCredential credential;
+  final CredentialStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Detalhes da credencial')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'REGISTO LOCAL',
+                    style: TextStyle(
+                      color: Colors.white60,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    credential.type,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    credential.issuer,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            _DetailRow(label: 'Referência', value: credential.reference),
+            _DetailRow(
+              label: 'Adicionada em',
+              value: _formatDate(credential.createdAt),
+            ),
+            const SizedBox(height: 12),
+            const Card(
+              child: ListTile(
+                leading: Icon(Icons.warning_amber_rounded),
+                title: Text('Não verificada'),
+                subtitle: Text(
+                  'Esta credencial foi criada manualmente para testes e ainda não possui assinatura de uma entidade emissora.',
+                ),
+              ),
+            ),
+            const SizedBox(height: 22),
+            OutlinedButton.icon(
+              onPressed: () => _remove(context),
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Remover da KARTA'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _remove(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Remover credencial?'),
+            content: const Text(
+              'O registo será removido apenas deste dispositivo.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Remover'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed) return;
+
+    await store.remove(credential.id);
+    if (!context.mounted) return;
+    Navigator.of(context).pop(true);
+  }
+
+  String _formatDate(DateTime value) {
+    final local = value.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    return '$day/$month/${local.year}';
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  const _DetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.black54,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 5),
+          SelectableText(
+            value,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -576,18 +1063,21 @@ class VerifyPage extends StatelessWidget {
           children: [
             const Icon(Icons.qr_code_scanner_rounded, size: 82),
             const SizedBox(height: 22),
-            const Text('Verificar identidade', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w900)),
+            const Text(
+              'Verificar identidade',
+              style: TextStyle(fontSize: 27, fontWeight: FontWeight.w900),
+            ),
             const SizedBox(height: 10),
             const Text(
-              'A leitura e apresentação de QR Code será ligada ao motor de credenciais verificáveis na próxima etapa.',
+              'A Alpha 0.3 já guarda credenciais locais, mas ainda não as trata como credenciais verificáveis. A leitura e apresentação por QR Code será ligada ao motor de verificação numa próxima etapa.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.black54, height: 1.5),
             ),
             const SizedBox(height: 22),
-            FilledButton.icon(
+            const FilledButton.icon(
               onPressed: null,
-              icon: const Icon(Icons.qr_code_scanner),
-              label: const Text('Ler QR Code — em breve'),
+              icon: Icon(Icons.qr_code_scanner),
+              label: Text('Ler QR Code — em breve'),
             ),
           ],
         ),
