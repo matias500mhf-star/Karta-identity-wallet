@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 0.5.1+6
 
 environment:
-  sdk: '>=3.4.0 <4.0.0'
+  sdk: '>=3.10.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -13,7 +13,7 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   cupertino_icons: ^1.0.8
   image_picker: ^1.1.2
-  file_picker: ^11.0.3
+  file_picker: ^12.3.0
   path_provider: ^2.1.5
   cryptography: ^2.7.0
 

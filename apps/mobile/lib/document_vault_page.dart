@@ -175,16 +175,16 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
   }
 
   Future<void> _pickAttachment() async {
-    final result = await FilePicker.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png'],
-      withData: true,
     );
-    final file = result?.files.single;
-    if (!mounted || file == null || file.bytes == null) return;
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
+    if (!mounted) return;
     final ext = (file.extension ?? '').toLowerCase();
     setState(() {
-      attachment = file.bytes;
+      attachment = bytes;
       attachmentName = file.name;
       attachmentMime = ext == 'pdf' ? 'application/pdf' : 'image/$ext';
     });
