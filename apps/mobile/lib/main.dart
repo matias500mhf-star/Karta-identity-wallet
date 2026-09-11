@@ -605,10 +605,10 @@ class ScanPage extends StatelessWidget {
               style: TextStyle(color: Colors.black54, height: 1.5),
             ),
             const SizedBox(height: 24),
-            const FilledButton.icon(
+            FilledButton.icon(
               onPressed: null,
-              icon: Icon(Icons.qr_code_scanner),
-              label: Text('Ler QR Code'),
+              icon: const Icon(Icons.qr_code_scanner),
+              label: const Text('Ler QR Code'),
             ),
           ],
         ),
