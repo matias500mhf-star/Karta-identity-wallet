@@ -2,7 +2,7 @@ name: KARTA Mobile CI
 
 on:
   push:
-    branches: [main, 'feature/**']
+    branches: [main, 'feature/**', 'fix/**']
     paths:
       - 'apps/mobile/**'
       - '.github/workflows/mobile-ci.yml'
@@ -33,6 +33,11 @@ jobs:
       - name: Generate Android platform scaffold
         run: flutter create --platforms=android --android-language=kotlin --project-name=karta_wallet --org=com.karta.identity --no-pub .
 
+      - name: Mark launcher as local-first test build
+        run: |
+          sed -i 's/android:label="karta_wallet"/android:label="KARTA LOCAL TEST"/' android/app/src/main/AndroidManifest.xml
+          grep -n 'android:label' android/app/src/main/AndroidManifest.xml
+
       - name: Resolve dependencies
         run: flutter pub get
 
@@ -45,7 +50,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: karta-debug-apk
+          name: karta-local-test-apk
           path: apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 14
