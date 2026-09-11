@@ -52,7 +52,7 @@ export class TokenService {
     return this.verify<RefreshTokenPayload>(token, this.refreshSecret, 'refresh');
   }
 
-  private sign(payload: Record<string, unknown>, secret: string): string {
+  private sign(payload: object, secret: string): string {
     const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
     const signature = createHmac('sha256', secret).update(body).digest('base64url');
     return `${body}.${signature}`;

@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
-import { DocumentsService } from './documents.service';
+import { CreateDocumentInput, DocumentsService } from './documents.service';
 
 @Controller('documents')
 @UseGuards(AuthGuard)
@@ -18,14 +18,10 @@ export class DocumentsController {
   }
 
   @Post()
-  create(@Req() request: { user: { sub: string } }, @Body() body: {
-    type: string;
-    title: string;
-    issuer?: string;
-    documentNumber?: string;
-    expiresAt?: string;
-    storageKey: string;
-  }) {
+  create(
+    @Req() request: { user: { sub: string } },
+    @Body() body: CreateDocumentInput,
+  ) {
     return this.documents.createForUser(request.user.sub, body);
   }
 }
