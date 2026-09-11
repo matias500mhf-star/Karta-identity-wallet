@@ -175,13 +175,13 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
   }
 
   Future<void> _pickAttachment() async {
-    final result = await FilePicker.platform.pickFiles(
+    final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png'],
       withData: true,
     );
     final file = result?.files.single;
-    if (file == null || file.bytes == null) return;
+    if (!mounted || file == null || file.bytes == null) return;
     final ext = (file.extension ?? '').toLowerCase();
     setState(() {
       attachment = file.bytes;
