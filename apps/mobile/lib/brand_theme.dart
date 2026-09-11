@@ -6,7 +6,7 @@ class HmatiasBrand {
   static const blue = Color(0xFF0065CC);
   static const sky = Color(0xFF48BAF5);
   static const ink = Color(0xFF102D4D);
-  static const muted = Color(0xFF5D6D7D);
+  static const muted = Color(0xFF627387);
   static const light = Color(0xFFF4F8FC);
   static const border = Color(0xFFDCE6F0);
 
