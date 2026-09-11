@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'document_vault_page.dart';
+import 'profile_page.dart';
 import 'services/credential_store.dart';
 import 'services/document_store.dart';
 import 'services/session_store.dart';
@@ -115,7 +116,7 @@ class _WelcomePageState extends State<WelcomePage> {
               child: const Text('Criar a minha KARTA'),
             ),
             const SizedBox(height: 12),
-            const Text('KARTA Alpha 0.4 · Document Vault', textAlign: TextAlign.center, style: TextStyle(color: Colors.black45, fontSize: 12)),
+            const Text('KARTA Alpha 0.5 · Document Vault', textAlign: TextAlign.center, style: TextStyle(color: Colors.black45, fontSize: 12)),
           ],
         ),
       ),
@@ -394,10 +395,22 @@ class _WalletPageState extends State<WalletPage> {
         const SizedBox(height: 18),
         const Text('Definições', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
         const SizedBox(height: 20),
+        Card(child: ListTile(
+          leading: const Icon(Icons.person_outline),
+          title: const Text('Perfil de identidade'),
+          subtitle: const Text('Consultar e editar os meus dados'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () async {
+            final changed = await Navigator.of(context).push<bool>(
+              MaterialPageRoute<bool>(builder: (_) => ProfilePage(store: widget.store)),
+            );
+            if (changed == true && mounted) await _load();
+          },
+        )),
         const Card(child: ListTile(leading: Icon(Icons.fingerprint), title: Text('Biometria'), subtitle: Text('Prevista para uma próxima versão'))),
         const Card(child: ListTile(leading: Icon(Icons.cloud_off_outlined), title: Text('Modo local'), subtitle: Text('A Alpha funciona sem conta online'))),
         const Card(child: ListTile(leading: Icon(Icons.lock_outline), title: Text('Document Vault'), subtitle: Text('Ficheiros cifrados com AES-GCM no armazenamento privado da app'))),
-        const Card(child: ListTile(leading: Icon(Icons.info_outline), title: Text('KARTA Alpha 0.4'), subtitle: Text('Local Identity Wallet + Document Vault'))),
+        const Card(child: ListTile(leading: Icon(Icons.info_outline), title: Text('KARTA Alpha 0.5'), subtitle: Text('Local Identity Wallet + Document Vault'))),
         const SizedBox(height: 18),
         OutlinedButton.icon(onPressed: () => Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute<void>(builder: (_) => UnlockPage(store: widget.store)), (_) => false), icon: const Icon(Icons.lock_outline), label: const Text('Bloquear KARTA')),
         const SizedBox(height: 10),
@@ -532,7 +545,7 @@ class VerifyPage extends StatelessWidget {
           child: ListTile(
             leading: Icon(Icons.qr_code_scanner_outlined),
             title: Text('Motor QR / credenciais verificáveis'),
-            subtitle: Text('Próxima etapa. O cofre documental da Alpha 0.4 guarda cópias locais, não credenciais oficiais.'),
+            subtitle: Text('Próxima etapa. O cofre documental da Alpha 0.5 guarda cópias locais, não credenciais oficiais.'),
           ),
         ),
       ],
