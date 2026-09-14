@@ -102,6 +102,7 @@ class _QrSharePageState extends State<QrSharePage> {
             if (value == true) { selected.add(entry.key); } else { selected.remove(entry.key); }
             payload = null;
           }),
+        ),
       FilledButton(onPressed: selected.isEmpty || busy ? null : _generate, child: const Text('Gerar QR')),
       if (payload != null) ...[
         const SizedBox(height: 20),

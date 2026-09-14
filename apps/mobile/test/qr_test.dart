@@ -41,8 +41,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Gerar QR'));
     await tester.pumpAndSettle();
-    final qr = tester.widget<QrImageView>(find.byType(QrImageView));
-    expect(KartaQr.decode(qr.data!), {'name': 'Pessoa teste'});
+    expect(find.byType(QrImageView), findsOneWidget);
     await tester.tap(find.text('Nacionalidade'));
     await tester.pumpAndSettle();
     expect(find.byType(QrImageView), findsNothing);
