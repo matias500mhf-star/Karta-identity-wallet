@@ -33,7 +33,7 @@ class WalletHero extends StatelessWidget {
         const Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(Icons.lock_outline_rounded, color: HmatiasBrand.sky, size: 16),
           SizedBox(width: 6),
-          Text('Armazenamento local', style: TextStyle(color: Colors.white, fontSize: 12)),
+          Flexible(child: Text('Armazenamento local', style: TextStyle(color: Colors.white, fontSize: 12))),
         ]),
         Text('$credentialCount credenciais', style: const TextStyle(color: Colors.white70, fontSize: 12)),
       ]),
