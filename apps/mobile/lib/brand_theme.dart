@@ -22,6 +22,24 @@ class HmatiasBrand {
       fontFamily: 'Inter',
       colorScheme: scheme,
       scaffoldBackgroundColor: light,
+      cardTheme: CardThemeData(
+        color: Colors.white, surfaceTintColor: Colors.transparent,
+        elevation: 0, margin: const EdgeInsets.only(bottom: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: const BorderSide(color: border),
+        ),
+      ),
+      dividerTheme: const DividerThemeData(color: border, space: 28),
+      listTileTheme: const ListTileThemeData(
+        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        iconColor: blue,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: navy,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.white, foregroundColor: navy,
         surfaceTintColor: Colors.transparent, centerTitle: false,
@@ -30,21 +48,21 @@ class HmatiasBrand {
         backgroundColor: blue, foregroundColor: Colors.white,
         minimumSize: const Size(48, 52),
         textStyle: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       )),
       outlinedButtonTheme: OutlinedButtonThemeData(style: OutlinedButton.styleFrom(
         foregroundColor: navy, minimumSize: const Size(48, 48),
         side: const BorderSide(color: border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       )),
       inputDecorationTheme: InputDecorationTheme(
         filled: true, fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(9)),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(9), borderSide: const BorderSide(color: border),
+          borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(9), borderSide: const BorderSide(color: blue, width: 2),
+          borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: blue, width: 2),
         ),
       ),
       navigationBarTheme: const NavigationBarThemeData(

@@ -1,4 +1,5 @@
 import 'qr_page.dart';
+import 'premium_widgets.dart';
 import 'brand_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -107,7 +108,7 @@ class _WelcomePageState extends State<WelcomePage> {
               child: const Text('Criar a minha KARTA'),
             ),
             const SizedBox(height: 12),
-            const Text('KARTA Alpha 0.6 · Document Vault', textAlign: TextAlign.center, style: TextStyle(color: HmatiasBrand.muted, fontSize: 12)),
+            const Text('KARTA Alpha 0.7 · HMATIAS', textAlign: TextAlign.center, style: TextStyle(color: HmatiasBrand.muted, fontSize: 12)),
           ],
         ),
       ),
@@ -323,23 +324,38 @@ class _WalletPageState extends State<WalletPage> {
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
         children: [
           const SizedBox(height: 8),
-          const Text('KARTA · HMATIAS', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, letterSpacing: 1.6)),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(color: HmatiasBrand.navy, borderRadius: BorderRadius.circular(28)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('IDENTITY WALLET', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w800, letterSpacing: 1.4)), Icon(Icons.shield_outlined, color: Colors.white)]),
-                const SizedBox(height: 30),
-                Text(walletName, style: const TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 8),
-                const Text('Carteira, credenciais e documentos protegidos localmente.', style: TextStyle(color: Colors.white70)),
-              ],
+          Row(children: [
+            const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('A sua identidade, consigo.', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+              SizedBox(height: 6),
+              Text('KARTA · Um produto HMATIAS', style: TextStyle(color: HmatiasBrand.muted, fontSize: 12)),
+            ])),
+            IconButton(
+              tooltip: 'Bloquear carteira',
+              onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute<void>(builder: (_) => UnlockPage(store: widget.store)), (_) => false),
+              icon: const Icon(Icons.lock_outline_rounded),
+            ),
+          ]),
+          const SizedBox(height: 24),
+          WalletHero(name: walletName, credentialCount: credentials.length),
+          const SizedBox(height: 28),
+          const Text('Tudo à mão', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 14),
+          KartaActionPair(
+            first: KartaAction(
+              icon: Icons.folder_copy_outlined, title: 'Documentos',
+              subtitle: 'Consultar e guardar as suas cópias',
+              onTap: () => setState(() => index = 1),
+            ),
+            second: KartaAction(
+              icon: Icons.qr_code_rounded, title: 'Partilhar por QR',
+              subtitle: 'Escolha os dados que quer mostrar',
+              onTap: () => setState(() => index = 2),
             ),
           ),
           const SizedBox(height: 26),
@@ -348,7 +364,7 @@ class _WalletPageState extends State<WalletPage> {
           if (loading)
             const Padding(padding: EdgeInsets.all(28), child: Center(child: CircularProgressIndicator()))
           else if (credentials.isEmpty)
-            const Card(child: Padding(padding: EdgeInsets.all(24), child: Text('Ainda não existem credenciais locais.', textAlign: TextAlign.center)))
+            const KartaEmptyState(icon: Icons.badge_outlined, title: 'A sua carteira começa aqui', message: 'Adicione uma credencial local ou guarde um documento para o ter sempre à mão.')
           else
             ...credentials.map(_credentialTile),
           const SizedBox(height: 18),
@@ -400,10 +416,10 @@ class _WalletPageState extends State<WalletPage> {
             if (changed == true && mounted) await _load();
           },
         )),
-        const Card(child: ListTile(leading: Icon(Icons.fingerprint), title: Text('Biometria'), subtitle: Text('Prevista para uma próxima versão'))),
+        
         const Card(child: ListTile(leading: Icon(Icons.cloud_off_outlined), title: Text('Modo local'), subtitle: Text('A Alpha funciona sem conta online'))),
         const Card(child: ListTile(leading: Icon(Icons.lock_outline), title: Text('Document Vault'), subtitle: Text('Ficheiros cifrados com AES-GCM no armazenamento privado da app'))),
-        const Card(child: ListTile(leading: Icon(Icons.info_outline), title: Text('KARTA Alpha 0.6'), subtitle: Text('Local Identity Wallet + Document Vault'))),
+        const Card(child: ListTile(leading: Icon(Icons.info_outline), title: Text('KARTA Alpha 0.7'), subtitle: Text('Um produto HMATIAS · Documentos e QR'))),
         const SizedBox(height: 18),
         OutlinedButton.icon(onPressed: () => Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute<void>(builder: (_) => UnlockPage(store: widget.store)), (_) => false), icon: const Icon(Icons.lock_outline), label: const Text('Bloquear KARTA')),
         const SizedBox(height: 10),

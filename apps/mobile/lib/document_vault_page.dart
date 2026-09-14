@@ -1,4 +1,5 @@
 import 'qr_page.dart';
+import 'premium_widgets.dart';
 import 'services/qr_payload.dart';
 import 'pdf_viewer_page.dart';
 import 'brand_theme.dart';
@@ -22,6 +23,8 @@ class DocumentVaultPage extends StatefulWidget {
 class _DocumentVaultPageState extends State<DocumentVaultPage> {
   List<VaultDocument> documents = [];
   bool loading = true;
+  String query = '';
+  String filter = 'Todos';
 
   @override
   void initState() {
@@ -34,6 +37,7 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
     if (!mounted) return;
     setState(() {
       documents = items;
+      if (filter != 'Todos' && !items.any((item) => item.type == filter)) filter = 'Todos';
       loading = false;
     });
   }
@@ -58,9 +62,14 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
 
   @override
   Widget build(BuildContext context) {
+    final visible = documents.where((item) =>
+      (filter == 'Todos' || item.type == filter) &&
+      ('${item.title} ${item.type}').toLowerCase().contains(query.trim().toLowerCase())).toList();
+    final types = ['Todos', ...documents.map((item) => item.type).toSet()];
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(20),
         children: [
           const SizedBox(height: 8),
@@ -77,25 +86,35 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
             label: const Text('Adicionar documento'),
           ),
           const SizedBox(height: 18),
+          TextField(
+            onChanged: (value) => setState(() => query = value),
+            decoration: const InputDecoration(
+              hintText: 'Pesquisar por nome ou tipo',
+              prefixIcon: Icon(Icons.search_rounded),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(spacing: 8, runSpacing: 4, children: types.map((type) => ChoiceChip(
+            label: Text(type), selected: filter == type,
+            onSelected: (_) => setState(() => filter = type),
+          )).toList()),
+          const SizedBox(height: 12),
+          Text('${visible.length} de ${documents.length} documentos', style: const TextStyle(color: HmatiasBrand.muted, fontSize: 12)),
+          const SizedBox(height: 16),
           if (loading)
             const Center(child: Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator()))
           else if (documents.isEmpty)
-            const Card(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Icon(Icons.folder_copy_outlined, size: 44),
-                    SizedBox(height: 12),
-                    Text('Ainda não existem documentos.', style: TextStyle(fontWeight: FontWeight.w800)),
-                    SizedBox(height: 6),
-                    Text('Pode fotografar frente/verso ou anexar PDF/imagem.', textAlign: TextAlign.center),
-                  ],
-                ),
-              ),
+            const KartaEmptyState(
+              icon: Icons.folder_copy_outlined, title: 'O seu cofre está pronto',
+              message: 'Adicione um PDF ou uma fotografia. As suas cópias ficam cifradas neste dispositivo.',
+            )
+          else if (visible.isEmpty)
+            const KartaEmptyState(
+              icon: Icons.search_off_rounded, title: 'Sem resultados',
+              message: 'Experimente outro nome ou escolha o filtro Todos.',
             )
           else
-            ...documents.map(
+            ...visible.map(
               (item) => Card(
                 child: ListTile(
                   onTap: () => _open(item),

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'brand_theme.dart';
+import 'premium_widgets.dart';
 import 'pdf_viewer_page.dart';
 import 'services/qr_payload.dart';
 import 'services/session_store.dart';
@@ -29,16 +30,37 @@ class QrHubPage extends StatelessWidget {
   }
   @override
   Widget build(BuildContext context) => ListView(padding: const EdgeInsets.all(20), children: [
-    const Text('QR KARTA', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
-    const SizedBox(height: 16),
-    const Text('Partilhe apenas os dados que escolher. Para criar um QR de documento ou credencial, abra o respectivo registo.'),
-    const SizedBox(height: 20),
-    FilledButton.icon(onPressed: () => _profile(context), icon: const Icon(Icons.qr_code), label: const Text('Gerar QR do perfil')),
+    const SizedBox(height: 8),
+    const Text('Partilhar com controlo', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
     const SizedBox(height: 12),
-    OutlinedButton.icon(onPressed: () => Navigator.push<void>(context, MaterialPageRoute(builder: (_) => const QrScanPage())),
-      icon: const Icon(Icons.qr_code_scanner), label: const Text('Ler QR pela câmara ou imagem')),
-    const SizedBox(height: 20),
-    const Card(child: Padding(padding: EdgeInsets.all(16), child: Text('Os QR desta Alpha contêm dados declarados pelo utilizador. A leitura não comprova a identidade nem a autenticidade de documentos.'))),
+    const Text('Os seus dados. A sua escolha.', style: TextStyle(color: HmatiasBrand.muted, fontSize: 16)),
+    const SizedBox(height: 24),
+    KartaActionPair(
+      first: KartaAction(
+        icon: Icons.qr_code_rounded, title: 'Criar QR',
+        subtitle: 'Selecione os dados do seu perfil',
+        onTap: () => _profile(context),
+      ),
+      second: KartaAction(
+        icon: Icons.qr_code_scanner_rounded, title: 'Ler QR',
+        subtitle: 'Use a câmara ou uma imagem guardada',
+        onTap: () => Navigator.push<void>(context, MaterialPageRoute(builder: (_) => const QrScanPage())),
+      ),
+    ),
+    const SizedBox(height: 18),
+    const Card(child: Padding(padding: EdgeInsets.all(22), child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.tune_rounded, color: HmatiasBrand.blue),
+        SizedBox(height: 14),
+        Text('Escolha antes de partilhar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+        SizedBox(height: 10),
+        Text('1. Escolha os campos que quer incluir.\n2. Mostre o QR ou guarde-o como imagem.\n3. Para um documento, abra o registo no cofre.', style: TextStyle(height: 1.8, color: HmatiasBrand.muted)),
+      ],
+    ))),
+    const SizedBox(height: 8),
+    const Text('Os QR contêm dados declarados pelo utilizador. A leitura não comprova a identidade nem a autenticidade de documentos.', style: TextStyle(color: HmatiasBrand.muted, fontSize: 12, height: 1.5)),
+
   ]);
 }
 
