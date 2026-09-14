@@ -33,6 +33,9 @@ jobs:
       - name: Generate Android platform scaffold
         run: flutter create --platforms=android --android-language=kotlin --project-name=karta_wallet --org=com.karta.identity --no-pub .
 
+      - name: Install native PDF and export bridge
+        run: python3 scripts/install_android.py
+
       - name: Mark launcher as Alpha 0.5 Document Vault
         run: |
           sed -i 's/android:label="karta_wallet"/android:label="KARTA ALPHA 0.5"/' android/app/src/main/AndroidManifest.xml
@@ -53,7 +56,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: karta-alpha-05-profile-documents-apk
+          name: karta-alpha-052-pdf-export-apk
           path: apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 14
