@@ -1,3 +1,5 @@
+import 'qr_page.dart';
+import 'services/qr_payload.dart';
 import 'pdf_viewer_page.dart';
 import 'brand_theme.dart';
 import 'dart:typed_data';
@@ -386,7 +388,27 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
     }
   }
 
+  Future<void> _shareQr(String file) async {
+    if (working) return;
+    setState(() => working = true);
+    try {
+      final digest = await KartaQr.fingerprint(await widget.store.readEncrypted(file));
+      if (!mounted) return;
+      await Navigator.push<void>(context, MaterialPageRoute(builder: (_) => QrSharePage(fields: {
+        'documentTitle': widget.item.title, 'documentType': widget.item.type, 'sha256': digest,
+      })));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não foi possível preparar o QR deste documento.')));
+      }
+    } finally {
+      if (mounted) setState(() => working = false);
+    }
+  }
+
   Widget _fileButtons(String file, String name, String mime) => Wrap(spacing: 8, children: [
+    OutlinedButton.icon(onPressed: working ? null : () => _shareQr(file),
+      icon: const Icon(Icons.qr_code), label: const Text('QR do documento')),
     FilledButton.icon(onPressed: working ? null : () => _fileAction(file, name, mime, false),
       icon: const Icon(Icons.open_in_new), label: const Text('Abrir')),
     OutlinedButton.icon(onPressed: working ? null : () => _fileAction(file, name, mime, true),

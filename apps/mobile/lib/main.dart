@@ -1,3 +1,4 @@
+import 'qr_page.dart';
 import 'brand_theme.dart';
 import 'package:flutter/material.dart';
 
@@ -106,7 +107,7 @@ class _WelcomePageState extends State<WelcomePage> {
               child: const Text('Criar a minha KARTA'),
             ),
             const SizedBox(height: 12),
-            const Text('KARTA Alpha 0.5.2 · Document Vault', textAlign: TextAlign.center, style: TextStyle(color: HmatiasBrand.muted, fontSize: 12)),
+            const Text('KARTA Alpha 0.6 · Document Vault', textAlign: TextAlign.center, style: TextStyle(color: HmatiasBrand.muted, fontSize: 12)),
           ],
         ),
       ),
@@ -300,7 +301,7 @@ class _WalletPageState extends State<WalletPage> {
     final pages = [
       _wallet(),
       DocumentVaultPage(store: documentStore),
-      const VerifyPage(),
+      const QrHubPage(),
       _settings(),
     ];
     return Scaffold(
@@ -311,7 +312,7 @@ class _WalletPageState extends State<WalletPage> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), selectedIcon: Icon(Icons.account_balance_wallet), label: 'Carteira'),
           NavigationDestination(icon: Icon(Icons.folder_copy_outlined), selectedIcon: Icon(Icons.folder_copy), label: 'Documentos'),
-          NavigationDestination(icon: Icon(Icons.qr_code_scanner_outlined), selectedIcon: Icon(Icons.qr_code_scanner), label: 'Verificar'),
+          NavigationDestination(icon: Icon(Icons.qr_code_scanner_outlined), selectedIcon: Icon(Icons.qr_code_scanner), label: 'QR'),
           NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings), label: 'Definições'),
         ],
       ),
@@ -402,7 +403,7 @@ class _WalletPageState extends State<WalletPage> {
         const Card(child: ListTile(leading: Icon(Icons.fingerprint), title: Text('Biometria'), subtitle: Text('Prevista para uma próxima versão'))),
         const Card(child: ListTile(leading: Icon(Icons.cloud_off_outlined), title: Text('Modo local'), subtitle: Text('A Alpha funciona sem conta online'))),
         const Card(child: ListTile(leading: Icon(Icons.lock_outline), title: Text('Document Vault'), subtitle: Text('Ficheiros cifrados com AES-GCM no armazenamento privado da app'))),
-        const Card(child: ListTile(leading: Icon(Icons.info_outline), title: Text('KARTA Alpha 0.5.2'), subtitle: Text('Local Identity Wallet + Document Vault'))),
+        const Card(child: ListTile(leading: Icon(Icons.info_outline), title: Text('KARTA Alpha 0.6'), subtitle: Text('Local Identity Wallet + Document Vault'))),
         const SizedBox(height: 18),
         OutlinedButton.icon(onPressed: () => Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute<void>(builder: (_) => UnlockPage(store: widget.store)), (_) => false), icon: const Icon(Icons.lock_outline), label: const Text('Bloquear KARTA')),
         const SizedBox(height: 10),
@@ -508,6 +509,12 @@ class CredentialDetailsPage extends StatelessWidget {
           ListTile(title: const Text('Entidade'), subtitle: Text(credential.issuer)),
           ListTile(title: const Text('Referência'), subtitle: Text(credential.reference)),
           const SizedBox(height: 20),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.push<void>(context, MaterialPageRoute(builder: (_) => QrSharePage(fields: {
+              'documentType': credential.type, 'issuer': credential.issuer, 'reference': credential.reference,
+            }))),
+            icon: const Icon(Icons.qr_code), label: const Text('Partilhar por QR'),
+          ),
           FilledButton.tonalIcon(
             onPressed: () async {
               await store.remove(credential.id);
@@ -522,25 +529,3 @@ class CredentialDetailsPage extends StatelessWidget {
   }
 }
 
-class VerifyPage extends StatelessWidget {
-  const VerifyPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: const [
-        SizedBox(height: 18),
-        Text('Verificar', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
-        SizedBox(height: 20),
-        Card(
-          child: ListTile(
-            leading: Icon(Icons.qr_code_scanner_outlined),
-            title: Text('Motor QR / credenciais verificáveis'),
-            subtitle: Text('Próxima etapa. O cofre documental da Alpha 0.5 guarda cópias locais, não credenciais oficiais.'),
-          ),
-        ),
-      ],
-    );
-  }
-}
