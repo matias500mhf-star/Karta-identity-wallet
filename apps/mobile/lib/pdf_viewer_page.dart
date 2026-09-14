@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -32,10 +31,10 @@ class _PdfViewerPageState extends State<PdfViewerPage> {
       if (pages == 0) throw StateError('PDF sem páginas');
       if (mounted) await _render(0);
     } catch (_) {
-      if (mounted) setState(() {
+      if (mounted) { setState(() {
         busy = false;
         error = 'Não foi possível abrir o PDF. Pode estar danificado ou protegido por palavra-passe.';
-      });
+      }); }
     }
   }
 

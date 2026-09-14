@@ -378,9 +378,9 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
         )));
       }
     } catch (_) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      if (mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Não foi possível abrir ou guardar o ficheiro. A cópia na carteira foi mantida.'),
-      ));
+      )); }
     } finally {
       if (mounted) setState(() => working = false);
     }
