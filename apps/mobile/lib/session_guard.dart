@@ -103,10 +103,12 @@ class _SessionGuardState extends State<SessionGuard>
             child: PopScope(
               canPop: false,
               child: ScaffoldMessenger(
-                child: Navigator(
-                  onGenerateRoute: (_) => MaterialPageRoute<void>(
-                    builder: (_) =>
-                        widget.lockPageBuilder(SessionSecurity.unlock),
+                child: HeroControllerScope.none(
+                  child: Navigator(
+                    onGenerateRoute: (_) => MaterialPageRoute<void>(
+                      builder: (_) =>
+                          widget.lockPageBuilder(SessionSecurity.unlock),
+                    ),
                   ),
                 ),
               ),
