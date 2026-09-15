@@ -34,41 +34,54 @@ class _BackupPageState extends State<BackupPage> {
     try {
       if (widget.restore) {
         final file = await openFile();
-        if (file == null) return;
-        if (await file.length() > BackupCodec.maxBytes)
+        if (file == null) {
+          return;
+        }
+        if (await file.length() > BackupCodec.maxBytes) {
           throw const FormatException('Backup demasiado grande.');
+        }
         await BackupStore().restore(await file.readAsBytes(), password.text);
-        if (mounted) Navigator.pop(context, true);
+        if (mounted) {
+          Navigator.pop(context, true);
+        }
       } else {
-        if (password.text != confirm.text)
+        if (password.text != confirm.text) {
           throw const FormatException('As palavras-passe não coincidem.');
-        if (!await SessionStore().verifyPin(pin.text.trim()))
+        }
+        if (!await SessionStore().verifyPin(pin.text.trim())) {
           throw const FormatException('PIN incorreto.');
+        }
         final bytes = await BackupStore().export(password.text);
         final saved = await documentChannel.invokeMethod<bool>('exportFile', {
           'bytes': bytes,
           'name': 'karta-backup.kartabackup',
           'mime': 'application/octet-stream',
         });
-        if (mounted)
+        if (mounted) {
           setState(
             () => message = saved == true
                 ? 'Backup cifrado guardado. Conserve a palavra-passe e o PIN em segurança.'
                 : 'Gravação cancelada.',
           );
+        }
       }
     } on FormatException catch (e) {
-      if (mounted) setState(() => message = e.message);
+      if (mounted) {
+        setState(() => message = e.message);
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => message = widget.restore
               ? 'Não foi possível restaurar. Verifique a palavra-passe, o ficheiro e se o dispositivo está sem carteira.'
               : 'Não foi possível criar o backup. Confirme o PIN e tente novamente.',
         );
+      }
     } finally {
       pin.clear();
-      if (mounted) setState(() => busy = false);
+      if (mounted) {
+        setState(() => busy = false);
+      }
     }
   }
 

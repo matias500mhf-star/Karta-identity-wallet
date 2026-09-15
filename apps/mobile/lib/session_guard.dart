@@ -48,20 +48,27 @@ class _SessionGuardState extends State<SessionGuard>
 
   void _changed() {
     _touch();
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   void _touch() {
     timer?.cancel();
-    if (!SessionSecurity.locked.value)
+    if (!SessionSecurity.locked.value) {
       timer = Timer(const Duration(minutes: 5), SessionSecurity.lock);
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden)
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
       SessionSecurity.lock();
-    if (mounted) setState(() => obscured = state != AppLifecycleState.resumed);
+    }
+    if (mounted) {
+      setState(() => obscured = state != AppLifecycleState.resumed);
+    }
     if (state == AppLifecycleState.resumed) {
       _touch();
     } else {

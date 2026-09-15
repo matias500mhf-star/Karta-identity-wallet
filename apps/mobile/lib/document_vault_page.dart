@@ -35,11 +35,14 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
 
   Future<void> _load() async {
     final items = await widget.store.list();
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     setState(() {
       documents = items;
-      if (filter != 'Todos' && !items.any((item) => item.type == filter))
+      if (filter != 'Todos' && !items.any((item) => item.type == filter)) {
         filter = 'Todos';
+      }
       loading = false;
     });
   }
@@ -50,7 +53,9 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
         builder: (_) => AddDocumentPage(store: widget.store),
       ),
     );
-    if (added == true) await _load();
+    if (added == true) {
+      await _load();
+    }
   }
 
   Future<void> _open(VaultDocument item) async {
@@ -59,7 +64,9 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
         builder: (_) => DocumentDetailsPage(store: widget.store, item: item),
       ),
     );
-    if (changed == true) await _load();
+    if (changed == true) {
+      await _load();
+    }
   }
 
   @override
@@ -207,9 +214,13 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
       imageQuality: 88,
       maxWidth: 2400,
     );
-    if (image == null) return;
+    if (image == null) {
+      return;
+    }
     final bytes = await image.readAsBytes();
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     setState(() {
       if (isFront) {
         front = bytes;
@@ -225,9 +236,13 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
       imageQuality: 90,
       maxWidth: 2400,
     );
-    if (image == null) return;
+    if (image == null) {
+      return;
+    }
     final bytes = await image.readAsBytes();
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     setState(() {
       if (isFront) {
         front = bytes;
@@ -253,9 +268,13 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
           ),
         ],
       );
-      if (file == null) return;
+      if (file == null) {
+        return;
+      }
       final bytes = await file.readAsBytes();
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       final ext = file.name.split('.').last.toLowerCase();
       setState(() {
         attachment = bytes;
@@ -267,7 +286,9 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
             : 'image/jpeg';
       });
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Não foi possível abrir o anexo. Tente novamente.'),
@@ -296,10 +317,14 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
         attachmentName: attachmentName,
         attachmentMime: attachmentMime,
       );
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       Navigator.of(context).pop(true);
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       setState(() => busy = false);
       ScaffoldMessenger.of(
         context,
@@ -473,16 +498,20 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
       final b = widget.item.backFile == null
           ? null
           : await widget.store.readEncrypted(widget.item.backFile!);
-      if (mounted)
+      if (mounted) {
         setState(() {
           front = f;
           back = b;
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() => loadError = 'Não foi possível carregar as imagens.');
+      }
     } finally {
-      if (mounted) setState(() => loading = false);
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
   }
 
@@ -493,7 +522,9 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
     bool export, {
     bool share = false,
   }) async {
-    if (working) return;
+    if (working) {
+      return;
+    }
     if (export) {
       final confirmed = await showDialog<bool>(
         context: context,
@@ -520,12 +551,16 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
           ],
         ),
       );
-      if (confirmed != true || !mounted) return;
+      if (confirmed != true || !mounted) {
+        return;
+      }
     }
     setState(() => working = true);
     try {
       final bytes = await widget.store.readEncrypted(file);
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       if (export) {
         final saved = await documentChannel.invokeMethod<bool>(
           share ? 'shareFile' : 'exportFile',
@@ -572,18 +607,24 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
         );
       }
     } finally {
-      if (mounted) setState(() => working = false);
+      if (mounted) {
+        setState(() => working = false);
+      }
     }
   }
 
   Future<void> _shareQr(String file) async {
-    if (working) return;
+    if (working) {
+      return;
+    }
     setState(() => working = true);
     try {
       final digest = await KartaQr.fingerprint(
         await widget.store.readEncrypted(file),
       );
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       await Navigator.push<void>(
         context,
         MaterialPageRoute(
@@ -605,7 +646,9 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
         );
       }
     } finally {
-      if (mounted) setState(() => working = false);
+      if (mounted) {
+        setState(() => working = false);
+      }
     }
   }
 
@@ -659,9 +702,13 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
           ),
         ) ??
         false;
-    if (!yes) return;
+    if (!yes) {
+      return;
+    }
     await widget.store.remove(widget.item);
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     Navigator.pop(context, true);
   }
 

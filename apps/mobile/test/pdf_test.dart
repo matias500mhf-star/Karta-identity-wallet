@@ -28,8 +28,12 @@ void main() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(documentChannel, (call) async {
           calls.add(call.method);
-          if (call.method == 'openPdf') return 2;
-          if (call.method == 'renderPdf') return png;
+          if (call.method == 'openPdf') {
+            return 2;
+          }
+          if (call.method == 'renderPdf') {
+            return png;
+          }
           return null;
         });
     await tester.pumpWidget(

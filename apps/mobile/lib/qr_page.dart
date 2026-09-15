@@ -18,7 +18,9 @@ class QrHubPage extends StatelessWidget {
   Future<void> _profile(BuildContext context) async {
     try {
       final fields = await SessionStore().readProfile();
-      if (!context.mounted) return;
+      if (!context.mounted) {
+        return;
+      }
       if (fields.values.every((s) => s.trim().isEmpty)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -138,12 +140,18 @@ class _QrSharePageState extends State<QrSharePage> {
   Future<void> _saveImage({bool share = false}) async {
     setState(() => busy = true);
     try {
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) {
+        return;
+      }
       final boundary =
           imageKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
       final image = await boundary.toImage(pixelRatio: 3);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       image.dispose();
-      if (bytes == null) throw StateError('Imagem indisponível');
+      if (bytes == null) {
+        throw StateError('Imagem indisponível');
+      }
       final saved = await documentChannel.invokeMethod<bool>(
         share ? 'shareFile' : 'exportFile',
         {
@@ -165,7 +173,9 @@ class _QrSharePageState extends State<QrSharePage> {
         );
       }
     } finally {
-      if (mounted) setState(() => busy = false);
+      if (mounted) {
+        setState(() => busy = false);
+      }
     }
   }
 
@@ -271,7 +281,9 @@ class _QrScanPageState extends State<QrScanPage> {
   }
 
   Future<void> _gallery() async {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setState(() {
       busy = true;
       reading = false;
@@ -283,9 +295,13 @@ class _QrScanPageState extends State<QrScanPage> {
     final controller = MobileScannerController(autoStart: false);
     try {
       final image = await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (image == null) return;
+      if (image == null) {
+        return;
+      }
       final capture = await controller.analyzeImage(image.path);
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       final codes =
           capture?.barcodes.where((b) => b.rawValue != null).toList() ?? [];
       if (codes.isEmpty) {
@@ -294,10 +310,14 @@ class _QrScanPageState extends State<QrScanPage> {
         _decode(codes.first.rawValue!);
       }
     } catch (_) {
-      if (mounted) setState(() => error = 'Não foi possível ler a imagem.');
+      if (mounted) {
+        setState(() => error = 'Não foi possível ler a imagem.');
+      }
     } finally {
       await controller.dispose();
-      if (mounted) setState(() => busy = false);
+      if (mounted) {
+        setState(() => busy = false);
+      }
     }
   }
 
@@ -305,19 +325,26 @@ class _QrScanPageState extends State<QrScanPage> {
     setState(() => busy = true);
     try {
       final file = await openFile();
-      if (file == null) return;
+      if (file == null) {
+        return;
+      }
       final digest = await KartaQr.fingerprint(await file.readAsBytes());
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       setState(
         () => comparison = digest == fields!['sha256']
             ? 'O ficheiro corresponde à impressão digital do QR. Isto não comprova a sua origem nem a identidade do titular.'
             : 'O ficheiro é diferente do identificado neste QR.',
       );
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() => comparison = 'Não foi possível comparar o ficheiro.');
+      }
     } finally {
-      if (mounted) setState(() => busy = false);
+      if (mounted) {
+        setState(() => busy = false);
+      }
     }
   }
 
@@ -332,7 +359,9 @@ class _QrScanPageState extends State<QrScanPage> {
             height: 300,
             child: MobileScanner(
               onDetect: (capture) {
-                if (!reading || busy) return;
+                if (!reading || busy) {
+                  return;
+                }
                 for (final barcode in capture.barcodes) {
                   if (barcode.rawValue != null) {
                     _decode(barcode.rawValue!);

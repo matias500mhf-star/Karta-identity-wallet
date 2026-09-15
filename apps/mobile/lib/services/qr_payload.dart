@@ -24,8 +24,9 @@ class KartaQr {
   }
 
   static Map<String, String> decode(String raw) {
-    if (utf8.encode(raw).length > 1800)
+    if (utf8.encode(raw).length > 1800) {
       throw const FormatException('QR demasiado grande.');
+    }
     final value = jsonDecode(raw);
     if (value is! Map ||
         value['format'] != 'karta-share' ||
@@ -71,12 +72,14 @@ class QrReadResult {
   final bool isLink;
   static QrReadResult parse(String raw) {
     final text = raw.trim().replaceFirst(RegExp(r'^\uFEFF'), '');
-    if (text.isEmpty)
+    if (text.isEmpty) {
       return const QrReadResult(error: 'O QR não contém texto legível.');
-    if (utf8.encode(text).length > 8192)
+    }
+    if (utf8.encode(text).length > 8192) {
       return const QrReadResult(
         error: 'O conteúdo excede o tamanho suportado.',
       );
+    }
     dynamic json;
     try {
       json = jsonDecode(text);

@@ -5,7 +5,17 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:karta_wallet/services/session_store.dart';
 import 'package:karta_wallet/session_guard.dart';
+import 'package:karta_wallet/main.dart';
+import 'package:karta_wallet/services/biometric_service.dart';
 import 'package:karta_wallet/services/qr_payload.dart';
+
+class TestBiometric extends BiometricService {
+  bool result = false;
+  @override
+  Future<bool> available() async => true;
+  @override
+  Future<bool> authenticate() async => result;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -89,4 +99,31 @@ void main() {
       SessionSecurity.reset();
     },
   );
+  testWidgets('cancelled biometric authentication never unlocks the session', (
+    tester,
+  ) async {
+    FlutterSecureStorage.setMockInitialValues({
+      'karta.biometric.enabled': 'true',
+    });
+    final biometric = TestBiometric();
+    var entered = false;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UnlockPage(
+          store: SessionStore(),
+          biometricService: biometric,
+          onUnlocked: () => entered = true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Usar biometria'));
+    await tester.pumpAndSettle();
+    expect(entered, isFalse);
+    biometric.result = true;
+    await tester.tap(find.text('Usar biometria'));
+    await tester.pumpAndSettle();
+    expect(entered, isTrue);
+    SessionSecurity.reset();
+  });
 }

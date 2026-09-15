@@ -19,7 +19,9 @@ class SessionStore {
     required String pin,
     String name = 'A minha KARTA',
   }) async {
-    if (!RegExp(r'^\d{6}$').hasMatch(pin)) throw ArgumentError('PIN inválido.');
+    if (!RegExp(r'^\d{6}$').hasMatch(pin)) {
+      throw ArgumentError('PIN inválido.');
+    }
     await _savePin(pin);
     await _storage.write(key: _nameKey, value: name);
     await _storage.write(key: _walletCreatedKey, value: 'true');
@@ -49,20 +51,24 @@ class SessionStore {
   }
 
   Future<bool> verifyPin(String pin) async {
-    if (_checking) return false;
+    if (_checking) {
+      return false;
+    }
     _checking = true;
     try {
       final until =
           int.tryParse(await _storage.read(key: 'karta.pin.lockUntil') ?? '') ??
           0;
       final now = DateTime.now().millisecondsSinceEpoch;
-      if (now < until) throw StateError('Aguarde antes de tentar novamente.');
+      if (now < until) {
+        throw StateError('Aguarde antes de tentar novamente.');
+      }
       final record = await _storage.read(key: 'karta.pin.v2');
       bool valid = false;
       if (record == null) {
         final old = await _storage.read(key: _pinKey);
         valid = old != null && old == pin;
-        if (valid) await _savePin(pin);
+        if (valid) { await _savePin(pin); }
       } else {
         final data = jsonDecode(record) as Map;
         final hash = await _kdf.deriveKey(
@@ -109,7 +115,9 @@ class SessionStore {
 
   Future<Map<String, String>> readProfile() async {
     final raw = await _storage.read(key: 'karta.profile.v1');
-    if (raw == null) return {};
+    if (raw == null) {
+      return {};
+    }
     return Map<String, String>.from(jsonDecode(raw) as Map);
   }
 

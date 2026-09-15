@@ -57,7 +57,9 @@ class _WalletGateState extends State<WalletGate> {
   Future<void> _load() async {
     await BackupStore().recoverInterruptedRestore();
     final exists = await store.walletCreated();
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     setState(() {
       created = exists;
       loading = false;
@@ -66,8 +68,9 @@ class _WalletGateState extends State<WalletGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (loading)
+    if (loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     return created ? UnlockPage(store: store) : WelcomePage(store: store);
   }
 }
@@ -233,7 +236,9 @@ class _CreatePinPageState extends State<CreatePinPage> {
     setState(() => busy = true);
     await widget.store.createWallet(pin: value);
     SessionSecurity.unlock();
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => WalletPage(store: widget.store)),
       (_) => false,
@@ -300,9 +305,10 @@ class _CreatePinPageState extends State<CreatePinPage> {
 }
 
 class UnlockPage extends StatefulWidget {
-  const UnlockPage({super.key, required this.store, this.onUnlocked});
+  const UnlockPage({super.key, required this.store, this.onUnlocked, this.biometricService});
   final SessionStore store;
   final VoidCallback? onUnlocked;
+  final BiometricService? biometricService;
 
   @override
   State<UnlockPage> createState() => _UnlockPageState();
@@ -310,7 +316,7 @@ class UnlockPage extends StatefulWidget {
 
 class _UnlockPageState extends State<UnlockPage> {
   final pin = TextEditingController();
-  final biometrics = BiometricService();
+  late final biometrics = widget.biometricService ?? BiometricService();
   bool busy = false;
   bool biometric = false;
   String? error;
@@ -323,7 +329,9 @@ class _UnlockPageState extends State<UnlockPage> {
   Future<void> _checkBiometric() async {
     final enabled =
         await widget.store.biometricEnabled() && await biometrics.available();
-    if (mounted) setState(() => biometric = enabled);
+    if (mounted) {
+      setState(() => biometric = enabled);
+    }
   }
 
   @override
@@ -344,7 +352,9 @@ class _UnlockPageState extends State<UnlockPage> {
   }
 
   Future<void> _unlock({bool useBiometric = false}) async {
-    if (busy) return;
+    if (busy) {
+      return;
+    }
     setState(() {
       busy = true;
       error = null;
@@ -354,7 +364,9 @@ class _UnlockPageState extends State<UnlockPage> {
           ? await widget.store.biometricEnabled() &&
                 await biometrics.authenticate()
           : await widget.store.verifyPin(pin.text.trim());
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
       pin.clear();
       if (valid) {
         _enter();
@@ -366,18 +378,22 @@ class _UnlockPageState extends State<UnlockPage> {
         );
       }
     } on StateError catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => error =
               'Demasiadas tentativas. Aguarde antes de tentar novamente.',
         );
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => error = 'Não foi possível desbloquear. Tente novamente.',
         );
+      }
     } finally {
-      if (mounted) setState(() => busy = false);
+      if (mounted) {
+        setState(() => busy = false);
+      }
     }
   }
 
@@ -455,7 +471,9 @@ class _WalletPageState extends State<WalletPage> {
   Future<void> _load() async {
     final name = await widget.store.walletName();
     final items = await credentialStore.list();
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     setState(() {
       walletName = name;
       credentials = items;
@@ -469,7 +487,9 @@ class _WalletPageState extends State<WalletPage> {
         builder: (_) => AddCredentialPage(store: credentialStore),
       ),
     );
-    if (added != null) await _load();
+    if (added != null) {
+      await _load();
+    }
   }
 
   Future<void> _openCredential(LocalCredential credential) async {
@@ -481,7 +501,9 @@ class _WalletPageState extends State<WalletPage> {
         ),
       ),
     );
-    if (changed == true) await _load();
+    if (changed == true) {
+      await _load();
+    }
   }
 
   @override
@@ -682,7 +704,9 @@ class _WalletPageState extends State<WalletPage> {
                   builder: (_) => ProfilePage(store: widget.store),
                 ),
               );
-              if (changed == true && mounted) await _load();
+              if (changed == true && mounted) {
+                await _load();
+              }
             },
           ),
         ),
@@ -775,12 +799,16 @@ class _WalletPageState extends State<WalletPage> {
           ),
         ) ??
         false;
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
     await credentialStore.clear();
     await documentStore.clear();
     await widget.store.deleteWallet();
     SessionSecurity.reset();
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => WelcomePage(store: widget.store)),
       (_) => false,
@@ -829,7 +857,9 @@ class _AddCredentialPageState extends State<AddCredentialPage> {
       issuer: issuer.text,
       reference: reference.text,
     );
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
     Navigator.of(context).pop(credential);
   }
 
@@ -928,7 +958,9 @@ class CredentialDetailsPage extends StatelessWidget {
           FilledButton.tonalIcon(
             onPressed: () async {
               await store.remove(credential.id);
-              if (context.mounted) Navigator.of(context).pop(true);
+              if (context.mounted) {
+                Navigator.of(context).pop(true);
+              }
             },
             icon: const Icon(Icons.delete_outline),
             label: const Text('Remover credencial'),

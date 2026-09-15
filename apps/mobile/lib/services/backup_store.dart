@@ -19,15 +19,17 @@ class BackupCodec {
     Map<String, dynamic> data,
     String password,
   ) async {
-    if (password.length < 12 || password.length > 256)
+    if (password.length < 12 || password.length > 256) {
       throw const FormatException(
         'Use uma palavra-passe de 12 a 256 caracteres.',
       );
+    }
     final plain = utf8.encode(jsonEncode(data));
-    if (plain.length > maxBytes / 2)
+    if (plain.length > maxBytes / 2) {
       throw const FormatException(
         'A carteira excede o limite desta versão de backup.',
       );
+    }
     final salt = List<int>.generate(16, (_) => Random.secure().nextInt(256));
     final key = await _kdf.deriveKey(
       secretKey: SecretKey(utf8.encode(password)),
@@ -52,18 +54,21 @@ class BackupCodec {
     Uint8List bytes,
     String password,
   ) async {
-    if (bytes.length > maxBytes || password.length > 256)
+    if (bytes.length > maxBytes || password.length > 256) {
       throw const FormatException('Backup demasiado grande.');
+    }
     final data = jsonDecode(utf8.decode(bytes));
     if (data is! Map ||
         data['format'] != 'karta-backup' ||
-        data['version'] != 1)
+        data['version'] != 1) {
       throw const FormatException('Backup incompatível.');
+    }
     final salt = base64Decode(data['salt'] as String);
     final nonce = base64Decode(data['nonce'] as String);
     final mac = base64Decode(data['mac'] as String);
-    if (salt.length != 16 || nonce.length != 12 || mac.length != 16)
+    if (salt.length != 16 || nonce.length != 12 || mac.length != 16) {
       throw const FormatException('Backup inválido.');
+    }
     final key = await _kdf.deriveKey(
       secretKey: SecretKey(utf8.encode(password)),
       nonce: salt,
@@ -101,8 +106,9 @@ class BackupStore {
 
   Future<Uint8List> export(String password) async {
     final all = await storage.readAll();
-    if (all['karta.wallet_created'] != 'true')
+    if (all['karta.wallet_created'] != 'true') {
       throw StateError('Carteira indisponível.');
+    }
     final values = {
       for (final key in keys)
         if (all[key] != null) key: all[key]!,
@@ -116,14 +122,16 @@ class BackupStore {
       for (final field in ['frontFile', 'backFile', 'attachmentFile']) {
         final name = item[field] as String?;
         if (name == null || files.containsKey(name)) continue;
-        if (!safeName(name))
+        if (!safeName(name)) {
           throw const FormatException('Nome de ficheiro inválido.');
+        }
         final file = File('${root.path}/karta_vault/$name');
         total += await file.length();
-        if (total > 16 * 1024 * 1024)
+        if (total > 16 * 1024 * 1024) {
           throw const FormatException(
             'Nesta versão, o backup suporta até 16 MB de ficheiros cifrados.',
           );
+        }
         files[name] = base64Encode(await file.readAsBytes());
       }
     }
@@ -132,25 +140,26 @@ class BackupStore {
 
   // Complete or roll back an interrupted restore before opening the wallet gate.
   Future<void> recoverInterruptedRestore() async {
-    if (await storage.read(key: 'karta.restore.pending') != 'true') return;
+    if (await storage.read(key: 'karta.restore.pending') != 'true') { return; }
     final root = await _root();
     if (await storage.read(key: 'karta.wallet_created') != 'true') {
       for (final key in keys) {
         await storage.delete(key: key);
       }
       final vault = Directory('${root.path}/karta_vault');
-      if (await vault.exists()) await vault.delete(recursive: true);
+      if (await vault.exists()) { await vault.delete(recursive: true); }
     }
     final stage = Directory('${root.path}/karta_vault_restore');
-    if (await stage.exists()) await stage.delete(recursive: true);
+    if (await stage.exists()) { await stage.delete(recursive: true); }
     await storage.delete(key: 'karta.restore.pending');
   }
 
   Future<void> restore(Uint8List bytes, String password) async {
     // Restore is only offered on a fresh installation; never replace a wallet.
     final existing = await storage.readAll();
-    if (existing.keys.any((key) => key.startsWith('karta.')))
+    if (existing.keys.any((key) => key.startsWith('karta.'))) {
       throw StateError('Já existem dados neste dispositivo.');
+    }
     final data = await BackupCodec.decode(bytes, password);
     final values = Map<String, String>.from(data['values'] as Map);
     final files = Map<String, String>.from(data['files'] as Map);
@@ -159,8 +168,32 @@ class BackupStore {
         (!values.containsKey('karta.pin.v2') &&
             !RegExp(r'^\d{6}$').hasMatch(values['karta.pin'] ?? '')) ||
         files.length > 1000 ||
-        files.keys.any((name) => !safeName(name)))
+        files.keys.any((name) => !safeName(name))) {
       throw const FormatException('Backup inválido.');
+    }
+    final pinRecord = values['karta.pin.v2'];
+    if (pinRecord != null) {
+      final pin = jsonDecode(pinRecord) as Map;
+      if (base64Decode(pin['salt'] as String).length != 16 ||
+          base64Decode(pin['hash'] as String).length != 32) {
+        throw const FormatException('Registo de PIN inválido.');
+      }
+    }
+    if (values['karta.profile.v1'] != null) {
+      Map<String, String>.from(jsonDecode(values['karta.profile.v1']!) as Map);
+    }
+    if (values['karta.local_credentials.v1'] != null) {
+      final credentials =
+          jsonDecode(values['karta.local_credentials.v1']!) as List;
+      if (credentials.any(
+        (item) =>
+            item is! Map ||
+            item['id'] is! String ||
+            (item['id'] as String).isEmpty,
+      )) {
+        throw const FormatException('Credenciais inválidas.');
+      }
+    }
     final index =
         jsonDecode(values['karta.document_vault.index.v1'] ?? '[]') as List;
     final requiredFiles = <String>{};
@@ -171,8 +204,9 @@ class BackupStore {
       }
     }
     if (requiredFiles.length != files.length ||
-        requiredFiles.any((name) => !files.containsKey(name)))
+        requiredFiles.any((name) => !files.containsKey(name))) {
       throw const FormatException('Backup incompleto.');
+    }
     // Authenticate all document ciphertext before making any local change.
     final packedFiles = <String, Uint8List>{};
     for (final entry in files.entries) {
@@ -192,8 +226,9 @@ class BackupStore {
     }
     final root = await _root();
     final vault = Directory('${root.path}/karta_vault');
-    if (await vault.exists())
+    if (await vault.exists()) {
       throw StateError('Já existem ficheiros neste dispositivo.');
+    }
     final stage = Directory('${root.path}/karta_vault_restore');
     await storage.write(key: 'karta.restore.pending', value: 'true');
     try {

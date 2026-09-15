@@ -26,12 +26,13 @@ class _SecurityPageState extends State<SecurityPage> {
   Future<void> _load() async {
     final e = await widget.store.biometricEnabled();
     final a = await biometric.available();
-    if (mounted)
+    if (mounted) {
       setState(() {
         enabled = e;
         available = a;
         busy = false;
       });
+    }
   }
 
   @override
@@ -46,24 +47,30 @@ class _SecurityPageState extends State<SecurityPage> {
       message = null;
     });
     try {
-      if (!await widget.store.verifyPin(pin.text.trim()))
+      if (!await widget.store.verifyPin(pin.text.trim())) {
         throw StateError('PIN incorreto.');
-      if (!enabled && !await biometric.authenticate())
+      }
+      if (!enabled && !await biometric.authenticate()) {
         throw StateError('Biometria não confirmada.');
+      }
       await widget.store.setBiometricEnabled(!enabled);
-      if (mounted)
+      if (mounted) {
         setState(() {
           enabled = !enabled;
           message = enabled ? 'Biometria ativada.' : 'Biometria desativada.';
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => message = 'Não foi possível alterar. Confirme o PIN e a biometria; após várias tentativas, aguarde.',
         );
+      }
     } finally {
       pin.clear();
-      if (mounted) setState(() => busy = false);
+      if (mounted) {
+        setState(() => busy = false);
+      }
     }
   }
 
