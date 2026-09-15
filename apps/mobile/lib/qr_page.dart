@@ -1,10 +1,12 @@
 import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+
 import 'brand_theme.dart';
 import 'premium_widgets.dart';
 import 'pdf_viewer_page.dart';
@@ -18,50 +20,89 @@ class QrHubPage extends StatelessWidget {
       final fields = await SessionStore().readProfile();
       if (!context.mounted) return;
       if (fields.values.every((s) => s.trim().isEmpty)) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Preencha o perfil em Definições antes de gerar o QR.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Preencha o perfil em Definições antes de gerar o QR.',
+            ),
+          ),
+        );
         return;
       }
-      await Navigator.push<void>(context, MaterialPageRoute(builder: (_) => QrSharePage(fields: fields)));
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute(builder: (_) => QrSharePage(fields: fields)),
+      );
     } catch (_) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não foi possível carregar o perfil.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível carregar o perfil.')),
+        );
       }
     }
   }
-  @override
-  Widget build(BuildContext context) => ListView(padding: const EdgeInsets.all(20), children: [
-    const SizedBox(height: 8),
-    const Text('Partilhar com controlo', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
-    const SizedBox(height: 12),
-    const Text('Os seus dados. A sua escolha.', style: TextStyle(color: HmatiasBrand.muted, fontSize: 16)),
-    const SizedBox(height: 24),
-    KartaActionPair(
-      first: KartaAction(
-        icon: Icons.qr_code_rounded, title: 'Criar QR',
-        subtitle: 'Selecione os dados do seu perfil',
-        onTap: () => _profile(context),
-      ),
-      second: KartaAction(
-        icon: Icons.qr_code_scanner_rounded, title: 'Ler QR',
-        subtitle: 'Use a câmara ou uma imagem guardada',
-        onTap: () => Navigator.push<void>(context, MaterialPageRoute(builder: (_) => const QrScanPage())),
-      ),
-    ),
-    const SizedBox(height: 18),
-    const Card(child: Padding(padding: EdgeInsets.all(22), child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(Icons.tune_rounded, color: HmatiasBrand.blue),
-        SizedBox(height: 14),
-        Text('Escolha antes de partilhar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-        SizedBox(height: 10),
-        Text('1. Escolha os campos que quer incluir.\n2. Mostre o QR ou guarde-o como imagem.\n3. Para um documento, abra o registo no cofre.', style: TextStyle(height: 1.8, color: HmatiasBrand.muted)),
-      ],
-    ))),
-    const SizedBox(height: 8),
-    const Text('Os QR contêm dados declarados pelo utilizador. A leitura não comprova a identidade nem a autenticidade de documentos.', style: TextStyle(color: HmatiasBrand.muted, fontSize: 12, height: 1.5)),
 
-  ]);
+  @override
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(20),
+    children: [
+      const SizedBox(height: 8),
+      const Text(
+        'Partilhar com controlo',
+        style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+      ),
+      const SizedBox(height: 12),
+      const Text(
+        'Os seus dados. A sua escolha.',
+        style: TextStyle(color: HmatiasBrand.muted, fontSize: 16),
+      ),
+      const SizedBox(height: 24),
+      KartaActionPair(
+        first: KartaAction(
+          icon: Icons.qr_code_rounded,
+          title: 'Criar QR',
+          subtitle: 'Selecione os dados do seu perfil',
+          onTap: () => _profile(context),
+        ),
+        second: KartaAction(
+          icon: Icons.qr_code_scanner_rounded,
+          title: 'Ler QR',
+          subtitle: 'Use a câmara ou uma imagem guardada',
+          onTap: () => Navigator.push<void>(
+            context,
+            MaterialPageRoute(builder: (_) => const QrScanPage()),
+          ),
+        ),
+      ),
+      const SizedBox(height: 18),
+      const Card(
+        child: Padding(
+          padding: EdgeInsets.all(22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.tune_rounded, color: HmatiasBrand.blue),
+              SizedBox(height: 14),
+              Text(
+                'Escolha antes de partilhar',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+              SizedBox(height: 10),
+              Text(
+                '1. Escolha os campos que quer incluir.\n2. Mostre o QR ou guarde-o como imagem.\n3. Para um documento, abra o registo no cofre.',
+                style: TextStyle(height: 1.8, color: HmatiasBrand.muted),
+              ),
+            ],
+          ),
+        ),
+      ),
+      const SizedBox(height: 8),
+      const Text(
+        'Os QR contêm dados declarados pelo utilizador. A leitura não comprova a identidade nem a autenticidade de documentos.',
+        style: TextStyle(color: HmatiasBrand.muted, fontSize: 12, height: 1.5),
+      ),
+    ],
+  );
 }
 
 class QrSharePage extends StatefulWidget {
@@ -79,30 +120,49 @@ class _QrSharePageState extends State<QrSharePage> {
 
   void _generate() {
     try {
-      final data = KartaQr.encode({for (final key in selected) key: widget.fields[key]!});
+      final data = KartaQr.encode({
+        for (final key in selected) key: widget.fields[key]!,
+      });
       setState(() => payload = data);
     } catch (_) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Escolha dados válidos para partilhar. Campos demasiado longos devem ser reduzidos.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Escolha dados válidos para partilhar. Campos demasiado longos devem ser reduzidos.',
+          ),
+        ),
+      );
     }
   }
 
-  Future<void> _saveImage() async {
+  Future<void> _saveImage({bool share = false}) async {
     setState(() => busy = true);
     try {
-      final boundary = imageKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      final boundary =
+          imageKey.currentContext!.findRenderObject()! as RenderRepaintBoundary;
       final image = await boundary.toImage(pixelRatio: 3);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       image.dispose();
       if (bytes == null) throw StateError('Imagem indisponível');
-      final saved = await documentChannel.invokeMethod<bool>('exportFile', {
-        'bytes': bytes.buffer.asUint8List(), 'name': 'karta-qr.png', 'mime': 'image/png',
-      });
-      if (mounted && saved == true) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('QR guardado.')));
+      final saved = await documentChannel.invokeMethod<bool>(
+        share ? 'shareFile' : 'exportFile',
+        {
+          'bytes': bytes.buffer.asUint8List(),
+          'name': 'karta-qr.png',
+          'mime': 'image/png',
+        },
+      );
+      if (!share && mounted && saved == true) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('QR guardado.')));
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não foi possível guardar o QR.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Não foi possível guardar ou partilhar o QR.'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -112,32 +172,76 @@ class _QrSharePageState extends State<QrSharePage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Partilhar por QR')),
-    body: ListView(padding: const EdgeInsets.all(20), children: [
-      const Text('Escolha o que será visível', style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700)),
-      const SizedBox(height: 12),
-      const Text('Qualquer pessoa que leia ou fotografe o QR poderá conservar os dados seleccionados. O QR não inclui o PDF nem a imagem original.'),
-      for (final entry in widget.fields.entries.where((e) => KartaQr.labels.containsKey(e.key) && e.value.trim().isNotEmpty))
-        CheckboxListTile(
-          title: Text(KartaQr.labels[entry.key]!), subtitle: Text(entry.value),
-          value: selected.contains(entry.key),
-          onChanged: busy ? null : (value) => setState(() {
-            if (value == true) { selected.add(entry.key); } else { selected.remove(entry.key); }
-            payload = null;
-          }),
+    body: ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text(
+          'Escolha o que será visível',
+          style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700),
         ),
-      FilledButton(onPressed: selected.isEmpty || busy ? null : _generate, child: const Text('Gerar QR')),
-      if (payload != null) ...[
-        const SizedBox(height: 20),
-        Center(child: RepaintBoundary(key: imageKey, child: Container(
-          color: Colors.white, padding: const EdgeInsets.all(16),
-          child: QrImageView(data: payload!, size: 220, backgroundColor: Colors.white, padding: const EdgeInsets.all(16)),
-        ))),
         const SizedBox(height: 12),
-        const Text('KARTA · Um produto HMATIAS', textAlign: TextAlign.center, style: TextStyle(color: HmatiasBrand.navy)),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(onPressed: busy ? null : _saveImage, icon: const Icon(Icons.download_outlined), label: const Text('Guardar imagem QR')),
+        const Text(
+          'Qualquer pessoa que leia ou fotografe o QR poderá conservar os dados seleccionados. O QR não inclui o PDF nem a imagem original.',
+        ),
+        for (final entry in widget.fields.entries.where(
+          (e) => KartaQr.labels.containsKey(e.key) && e.value.trim().isNotEmpty,
+        ))
+          CheckboxListTile(
+            title: Text(KartaQr.labels[entry.key]!),
+            subtitle: Text(entry.value),
+            value: selected.contains(entry.key),
+            onChanged: busy
+                ? null
+                : (value) => setState(() {
+                    if (value == true) {
+                      selected.add(entry.key);
+                    } else {
+                      selected.remove(entry.key);
+                    }
+                    payload = null;
+                  }),
+          ),
+        FilledButton(
+          onPressed: selected.isEmpty || busy ? null : _generate,
+          child: const Text('Gerar QR'),
+        ),
+        if (payload != null) ...[
+          const SizedBox(height: 20),
+          Center(
+            child: RepaintBoundary(
+              key: imageKey,
+              child: Container(
+                color: Colors.white,
+                padding: const EdgeInsets.all(16),
+                child: QrImageView(
+                  data: payload!,
+                  size: 220,
+                  backgroundColor: Colors.white,
+                  padding: const EdgeInsets.all(16),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'KARTA · Um produto HMATIAS',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: HmatiasBrand.navy),
+          ),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: busy ? null : () => _saveImage(share: true),
+            icon: const Icon(Icons.share_outlined),
+            label: const Text('Partilhar imagem QR'),
+          ),
+          OutlinedButton.icon(
+            onPressed: busy ? null : () => _saveImage(),
+            icon: const Icon(Icons.download_outlined),
+            label: const Text('Guardar imagem QR'),
+          ),
+        ],
       ],
-    ]),
+    ),
   );
 }
 
@@ -153,26 +257,37 @@ class _QrScanPageState extends State<QrScanPage> {
   Map<String, String>? fields;
   String? error;
   String? comparison;
+  QrReadResult? received;
 
   void _decode(String raw) {
-    try {
-      final result = KartaQr.decode(raw);
-      setState(() { reading = false; fields = result; error = null; comparison = null; });
-    } catch (_) {
-      setState(() { reading = false; fields = null; error = 'QR inválido ou incompatível com a KARTA. Nenhuma ligação foi aberta.'; });
-    }
+    final result = QrReadResult.parse(raw);
+    setState(() {
+      reading = false;
+      received = result;
+      fields = result.fields;
+      error = result.error;
+      comparison = null;
+    });
   }
 
   Future<void> _gallery() async {
     if (busy) return;
-    setState(() { busy = true; reading = false; fields = null; error = null; comparison = null; });
+    setState(() {
+      busy = true;
+      reading = false;
+      fields = null;
+      received = null;
+      error = null;
+      comparison = null;
+    });
     final controller = MobileScannerController(autoStart: false);
     try {
       final image = await ImagePicker().pickImage(source: ImageSource.gallery);
       if (image == null) return;
       final capture = await controller.analyzeImage(image.path);
       if (!mounted) return;
-      final codes = capture?.barcodes.where((b) => b.rawValue != null).toList() ?? [];
+      final codes =
+          capture?.barcodes.where((b) => b.rawValue != null).toList() ?? [];
       if (codes.isEmpty) {
         setState(() => error = 'Não foi encontrado um QR nesta imagem.');
       } else {
@@ -193,11 +308,14 @@ class _QrScanPageState extends State<QrScanPage> {
       if (file == null) return;
       final digest = await KartaQr.fingerprint(await file.readAsBytes());
       if (!mounted) return;
-      setState(() => comparison = digest == fields!['sha256']
-        ? 'O ficheiro corresponde à impressão digital do QR. Isto não comprova a sua origem nem a identidade do titular.'
-        : 'O ficheiro é diferente do identificado neste QR.');
+      setState(
+        () => comparison = digest == fields!['sha256']
+            ? 'O ficheiro corresponde à impressão digital do QR. Isto não comprova a sua origem nem a identidade do titular.'
+            : 'O ficheiro é diferente do identificado neste QR.',
+      );
     } catch (_) {
-      if (mounted) setState(() => comparison = 'Não foi possível comparar o ficheiro.');
+      if (mounted)
+        setState(() => comparison = 'Não foi possível comparar o ficheiro.');
     } finally {
       if (mounted) setState(() => busy = false);
     }
@@ -206,33 +324,96 @@ class _QrScanPageState extends State<QrScanPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Ler QR KARTA')),
-    body: ListView(padding: const EdgeInsets.all(20), children: [
-      if (reading) SizedBox(height: 300, child: MobileScanner(
-        onDetect: (capture) {
-          if (!reading || busy) return;
-          for (final barcode in capture.barcodes) {
-            if (barcode.rawValue != null) { _decode(barcode.rawValue!); break; }
-          }
-        },
-        errorBuilder: (context, error) => const Center(child: Padding(padding: EdgeInsets.all(20),
-          child: Text('Câmara indisponível. Verifique a permissão nas definições do Android ou seleccione uma imagem.'))),
-      )),
-      const SizedBox(height: 12),
-      OutlinedButton.icon(onPressed: busy ? null : _gallery, icon: const Icon(Icons.image_outlined), label: const Text('Ler QR de uma imagem')),
-      OutlinedButton.icon(onPressed: busy ? null : () => setState(() { reading = true; fields = null; error = null; comparison = null; }),
-        icon: const Icon(Icons.qr_code_scanner), label: const Text('Ler outro QR')),
-      if (busy) const LinearProgressIndicator(),
-      if (error != null) Text(error!),
-      if (fields != null) ...[
-        const Chip(label: Text('DADOS DECLARADOS · NÃO VERIFICADOS')),
-        for (final entry in fields!.entries)
-          ListTile(title: Text(KartaQr.labels[entry.key]!), subtitle: SelectableText(entry.value)),
-        if (fields!.containsKey('sha256'))
-          FilledButton(onPressed: busy ? null : _compare, child: const Text('Comparar com um ficheiro')),
-        if (comparison != null) Text(comparison!),
+    body: ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        if (reading)
+          SizedBox(
+            height: 300,
+            child: MobileScanner(
+              onDetect: (capture) {
+                if (!reading || busy) return;
+                for (final barcode in capture.barcodes) {
+                  if (barcode.rawValue != null) {
+                    _decode(barcode.rawValue!);
+                    break;
+                  }
+                }
+              },
+              errorBuilder: (context, error) => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Text(
+                    'Câmara indisponível. Verifique a permissão nas definições do Android ou seleccione uma imagem.',
+                  ),
+                ),
+              ),
+            ),
+          ),
         const SizedBox(height: 12),
-        const Text('Estes dados não têm assinatura de uma entidade emissora. Um QR legível não é prova de identidade.'),
+        OutlinedButton.icon(
+          onPressed: busy ? null : _gallery,
+          icon: const Icon(Icons.image_outlined),
+          label: const Text('Ler QR de uma imagem'),
+        ),
+        OutlinedButton.icon(
+          onPressed: busy
+              ? null
+              : () => setState(() {
+                  reading = true;
+                  fields = null;
+                  received = null;
+                  error = null;
+                  comparison = null;
+                }),
+          icon: const Icon(Icons.qr_code_scanner),
+          label: const Text('Ler outro QR'),
+        ),
+        if (busy) const LinearProgressIndicator(),
+        if (error != null) Text(error!),
+        if (received?.text != null)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    received!.isLink ? 'Ligação encontrada' : 'Conteúdo do QR',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SelectableText(received!.text!),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Conteúdo externo, não verificado pela KARTA. Pode selecionar e copiar o texto. Nenhuma ligação é aberta automaticamente.',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        if (fields != null) ...[
+          const Chip(label: Text('DADOS DECLARADOS · NÃO VERIFICADOS')),
+          for (final entry in fields!.entries)
+            ListTile(
+              title: Text(KartaQr.labels[entry.key]!),
+              subtitle: SelectableText(entry.value),
+            ),
+          if (fields!.containsKey('sha256'))
+            FilledButton(
+              onPressed: busy ? null : _compare,
+              child: const Text('Comparar com um ficheiro'),
+            ),
+          if (comparison != null) Text(comparison!),
+          const SizedBox(height: 12),
+          const Text(
+            'Estes dados não têm assinatura de uma entidade emissora. Um QR legível não é prova de identidade.',
+          ),
+        ],
       ],
-    ]),
+    ),
   );
 }

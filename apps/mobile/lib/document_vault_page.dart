@@ -3,6 +3,7 @@ import 'premium_widgets.dart';
 import 'services/qr_payload.dart';
 import 'pdf_viewer_page.dart';
 import 'brand_theme.dart';
+
 import 'dart:typed_data';
 
 import 'package:file_selector/file_selector.dart';
@@ -37,7 +38,8 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
     if (!mounted) return;
     setState(() {
       documents = items;
-      if (filter != 'Todos' && !items.any((item) => item.type == filter)) filter = 'Todos';
+      if (filter != 'Todos' && !items.any((item) => item.type == filter))
+        filter = 'Todos';
       loading = false;
     });
   }
@@ -62,9 +64,15 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
 
   @override
   Widget build(BuildContext context) {
-    final visible = documents.where((item) =>
-      (filter == 'Todos' || item.type == filter) &&
-      ('${item.title} ${item.type}').toLowerCase().contains(query.trim().toLowerCase())).toList();
+    final visible = documents
+        .where(
+          (item) =>
+              (filter == 'Todos' || item.type == filter) &&
+              ('${item.title} ${item.type}').toLowerCase().contains(
+                query.trim().toLowerCase(),
+              ),
+        )
+        .toList();
     final types = ['Todos', ...documents.map((item) => item.type).toSet()];
     return RefreshIndicator(
       onRefresh: _load,
@@ -73,7 +81,10 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
         padding: const EdgeInsets.all(20),
         children: [
           const SizedBox(height: 8),
-          const Text('Documentos', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
+          const Text(
+            'Documentos',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
+          ),
           const SizedBox(height: 8),
           const Text(
             'Guarde cópias digitais cifradas de documentos neste dispositivo. Estas cópias não são documentos oficiais verificados.',
@@ -94,23 +105,42 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
             ),
           ),
           const SizedBox(height: 12),
-          Wrap(spacing: 8, runSpacing: 4, children: types.map((type) => ChoiceChip(
-            label: Text(type), selected: filter == type,
-            onSelected: (_) => setState(() => filter = type),
-          )).toList()),
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: types
+                .map(
+                  (type) => ChoiceChip(
+                    label: Text(type),
+                    selected: filter == type,
+                    onSelected: (_) => setState(() => filter = type),
+                  ),
+                )
+                .toList(),
+          ),
           const SizedBox(height: 12),
-          Text('${visible.length} de ${documents.length} documentos', style: const TextStyle(color: HmatiasBrand.muted, fontSize: 12)),
+          Text(
+            '${visible.length} de ${documents.length} documentos',
+            style: const TextStyle(color: HmatiasBrand.muted, fontSize: 12),
+          ),
           const SizedBox(height: 16),
           if (loading)
-            const Center(child: Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator()))
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(30),
+                child: CircularProgressIndicator(),
+              ),
+            )
           else if (documents.isEmpty)
             const KartaEmptyState(
-              icon: Icons.folder_copy_outlined, title: 'O seu cofre está pronto',
+              icon: Icons.folder_copy_outlined,
+              title: 'O seu cofre está pronto',
               message: 'Adicione um PDF ou uma fotografia. As suas cópias ficam cifradas neste dispositivo.',
             )
           else if (visible.isEmpty)
             const KartaEmptyState(
-              icon: Icons.search_off_rounded, title: 'Sem resultados',
+              icon: Icons.search_off_rounded,
+              title: 'Sem resultados',
               message: 'Experimente outro nome ou escolha o filtro Todos.',
             )
           else
@@ -118,8 +148,15 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
               (item) => Card(
                 child: ListTile(
                   onTap: () => _open(item),
-                  leading: Icon(item.type == 'Passaporte' ? Icons.menu_book_outlined : Icons.badge_outlined),
-                  title: Text(item.title, style: const TextStyle(fontWeight: FontWeight.w800)),
+                  leading: Icon(
+                    item.type == 'Passaporte'
+                        ? Icons.menu_book_outlined
+                        : Icons.badge_outlined,
+                  ),
+                  title: Text(
+                    item.title,
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
                   subtitle: Text('${item.type} · cópia local não verificada'),
                   trailing: const Icon(Icons.chevron_right),
                 ),
@@ -183,7 +220,11 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
   }
 
   Future<void> _gallery(bool isFront) async {
-    final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 90, maxWidth: 2400);
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 90,
+      maxWidth: 2400,
+    );
     if (image == null) return;
     final bytes = await image.readAsBytes();
     if (!mounted) return;
@@ -198,14 +239,20 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
 
   Future<void> _pickAttachment() async {
     try {
-      final file = await openFile(acceptedTypeGroups: const [
-        XTypeGroup(
-          label: 'PDF e imagens',
-          extensions: ['pdf', 'jpg', 'jpeg', 'png'],
-          mimeTypes: ['application/pdf', 'image/jpeg', 'image/png'],
-          uniformTypeIdentifiers: ['com.adobe.pdf', 'public.jpeg', 'public.png'],
-        ),
-      ]);
+      final file = await openFile(
+        acceptedTypeGroups: const [
+          XTypeGroup(
+            label: 'PDF e imagens',
+            extensions: ['pdf', 'jpg', 'jpeg', 'png'],
+            mimeTypes: ['application/pdf', 'image/jpeg', 'image/png'],
+            uniformTypeIdentifiers: [
+              'com.adobe.pdf',
+              'public.jpeg',
+              'public.png',
+            ],
+          ),
+        ],
+      );
       if (file == null) return;
       final bytes = await file.readAsBytes();
       if (!mounted) return;
@@ -213,12 +260,18 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
       setState(() {
         attachment = bytes;
         attachmentName = file.name;
-        attachmentMime = ext == 'pdf' ? 'application/pdf' : ext == 'png' ? 'image/png' : 'image/jpeg';
+        attachmentMime = ext == 'pdf'
+            ? 'application/pdf'
+            : ext == 'png'
+            ? 'image/png'
+            : 'image/jpeg';
       });
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não foi possível abrir o anexo. Tente novamente.')),
+        const SnackBar(
+          content: Text('Não foi possível abrir o anexo. Tente novamente.'),
+        ),
       );
     }
   }
@@ -226,7 +279,9 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
   Future<void> _save() async {
     if (front == null && back == null && attachment == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Adicione pelo menos uma imagem ou ficheiro.')),
+        const SnackBar(
+          content: Text('Adicione pelo menos uma imagem ou ficheiro.'),
+        ),
       );
       return;
     }
@@ -246,7 +301,9 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => busy = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Não foi possível guardar: $e')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Não foi possível guardar: $e')));
     }
   }
 
@@ -262,35 +319,58 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
               child: ListTile(
                 leading: Icon(Icons.lock_outline),
                 title: Text('Cópia local cifrada'),
-                subtitle: Text('O ficheiro é guardado cifrado e marcado como não verificado.'),
+                subtitle: Text(
+                  'O ficheiro é guardado cifrado e marcado como não verificado.',
+                ),
               ),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               initialValue: type,
               decoration: const InputDecoration(labelText: 'Tipo de documento'),
-              items: types.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+              items: types
+                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                  .toList(),
               onChanged: (value) => setState(() => type = value ?? types.first),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: title,
-              decoration: const InputDecoration(labelText: 'Nome opcional', hintText: 'Ex.: Meu BI'),
+              decoration: const InputDecoration(
+                labelText: 'Nome opcional',
+                hintText: 'Ex.: Meu BI',
+              ),
             ),
             const SizedBox(height: 22),
-            _sideCard('Frente', front, () => _camera(true), () => _gallery(true)),
+            _sideCard(
+              'Frente',
+              front,
+              () => _camera(true),
+              () => _gallery(true),
+            ),
             const SizedBox(height: 12),
-            _sideCard('Verso', back, () => _camera(false), () => _gallery(false)),
+            _sideCard(
+              'Verso',
+              back,
+              () => _camera(false),
+              () => _gallery(false),
+            ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               onPressed: _pickAttachment,
               icon: const Icon(Icons.attach_file),
-              label: Text(attachmentName == null ? 'Anexar PDF ou imagem' : 'Anexo: $attachmentName'),
+              label: Text(
+                attachmentName == null
+                    ? 'Anexar PDF ou imagem'
+                    : 'Anexo: $attachmentName',
+              ),
             ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: busy ? null : _save,
-              child: busy ? const CircularProgressIndicator() : const Text('Guardar no cofre'),
+              child: busy
+                  ? const CircularProgressIndicator()
+                  : const Text('Guardar no cofre'),
             ),
           ],
         ),
@@ -298,7 +378,12 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
     );
   }
 
-  Widget _sideCard(String label, Uint8List? bytes, VoidCallback camera, VoidCallback gallery) {
+  Widget _sideCard(
+    String label,
+    Uint8List? bytes,
+    VoidCallback camera,
+    VoidCallback gallery,
+  ) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -310,16 +395,36 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
             if (bytes != null)
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.memory(bytes, height: 150, width: double.infinity, fit: BoxFit.cover),
+                child: Image.memory(
+                  bytes,
+                  height: 150,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
               )
             else
-              const SizedBox(height: 90, child: Center(child: Icon(Icons.image_outlined, size: 40))),
+              const SizedBox(
+                height: 90,
+                child: Center(child: Icon(Icons.image_outlined, size: 40)),
+              ),
             const SizedBox(height: 10),
             Row(
               children: [
-                Expanded(child: OutlinedButton.icon(onPressed: camera, icon: const Icon(Icons.camera_alt_outlined), label: const Text('Câmara'))),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: camera,
+                    icon: const Icon(Icons.camera_alt_outlined),
+                    label: const Text('Câmara'),
+                  ),
+                ),
                 const SizedBox(width: 8),
-                Expanded(child: OutlinedButton.icon(onPressed: gallery, icon: const Icon(Icons.photo_library_outlined), label: const Text('Galeria'))),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: gallery,
+                    icon: const Icon(Icons.photo_library_outlined),
+                    label: const Text('Galeria'),
+                  ),
+                ),
               ],
             ),
           ],
@@ -330,7 +435,11 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
 }
 
 class DocumentDetailsPage extends StatefulWidget {
-  const DocumentDetailsPage({super.key, required this.store, required this.item});
+  const DocumentDetailsPage({
+    super.key,
+    required this.store,
+    required this.item,
+  });
   final DocumentStore store;
   final VaultDocument item;
 
@@ -353,29 +462,64 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
   String? loadError;
 
   Future<void> _load() async {
-    setState(() { loading = true; loadError = null; });
+    setState(() {
+      loading = true;
+      loadError = null;
+    });
     try {
-      final f = widget.item.frontFile == null ? null : await widget.store.readEncrypted(widget.item.frontFile!);
-      final b = widget.item.backFile == null ? null : await widget.store.readEncrypted(widget.item.backFile!);
-      if (mounted) setState(() { front = f; back = b; });
+      final f = widget.item.frontFile == null
+          ? null
+          : await widget.store.readEncrypted(widget.item.frontFile!);
+      final b = widget.item.backFile == null
+          ? null
+          : await widget.store.readEncrypted(widget.item.backFile!);
+      if (mounted)
+        setState(() {
+          front = f;
+          back = b;
+        });
     } catch (_) {
-      if (mounted) setState(() => loadError = 'Não foi possível carregar as imagens.');
+      if (mounted)
+        setState(() => loadError = 'Não foi possível carregar as imagens.');
     } finally {
       if (mounted) setState(() => loading = false);
     }
   }
 
-  Future<void> _fileAction(String file, String name, String mime, bool export) async {
+  Future<void> _fileAction(
+    String file,
+    String name,
+    String mime,
+    bool export, {
+    bool share = false,
+  }) async {
     if (working) return;
     if (export) {
-      final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(
-        title: const Text('Guardar cópia fora da KARTA?'),
-        content: const Text('A cópia no destino escolhido não terá a protecção da carteira.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Continuar')),
-        ],
-      ));
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(
+            share
+                ? 'Partilhar cópia do documento?'
+                : 'Guardar cópia fora da KARTA?',
+          ),
+          content: Text(
+            share
+                ? 'A app escolhida e o destinatário terão acesso a esta cópia. Depois do envio, a KARTA não a pode revogar.'
+                : 'A cópia no destino escolhido não terá a protecção da carteira.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Continuar'),
+            ),
+          ],
+        ),
+      );
       if (confirmed != true || !mounted) return;
     }
     setState(() => working = true);
@@ -383,25 +527,50 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
       final bytes = await widget.store.readEncrypted(file);
       if (!mounted) return;
       if (export) {
-        final saved = await documentChannel.invokeMethod<bool>('exportFile', {
-          'bytes': bytes, 'name': name, 'mime': mime,
-        });
-        if (saved == true && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cópia guardada.')));
+        final saved = await documentChannel.invokeMethod<bool>(
+          share ? 'shareFile' : 'exportFile',
+          {'bytes': bytes, 'name': name, 'mime': mime},
+        );
+        if (!share && saved == true && mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('Cópia guardada.')));
         }
-      } else if (mime == 'application/pdf' || name.toLowerCase().endsWith('.pdf')) {
-        await Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => PdfViewerPage(bytes: bytes, title: name)));
+      } else if (mime == 'application/pdf' ||
+          name.toLowerCase().endsWith('.pdf')) {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (_) => PdfViewerPage(bytes: bytes, title: name),
+          ),
+        );
       } else {
-        await Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => Scaffold(
-          appBar: AppBar(title: Text(name)),
-          body: InteractiveViewer(maxScale: 5, child: Center(child: Image.memory(bytes,
-            errorBuilder: (_, error, stack) => const Text('Não foi possível abrir esta imagem.')))),
-        )));
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (_) => Scaffold(
+              appBar: AppBar(title: Text(name)),
+              body: InteractiveViewer(
+                maxScale: 5,
+                child: Center(
+                  child: Image.memory(
+                    bytes,
+                    errorBuilder: (_, error, stack) =>
+                        const Text('Não foi possível abrir esta imagem.'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
       }
     } catch (_) {
-      if (mounted) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Não foi possível abrir ou guardar o ficheiro. A cópia na carteira foi mantida.'),
-      )); }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Não foi possível abrir ou guardar o ficheiro. A cópia na carteira foi mantida.',
+            ),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => working = false);
     }
@@ -411,38 +580,81 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
     if (working) return;
     setState(() => working = true);
     try {
-      final digest = await KartaQr.fingerprint(await widget.store.readEncrypted(file));
+      final digest = await KartaQr.fingerprint(
+        await widget.store.readEncrypted(file),
+      );
       if (!mounted) return;
-      await Navigator.push<void>(context, MaterialPageRoute(builder: (_) => QrSharePage(fields: {
-        'documentTitle': widget.item.title, 'documentType': widget.item.type, 'sha256': digest,
-      })));
+      await Navigator.push<void>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => QrSharePage(
+            fields: {
+              'documentTitle': widget.item.title,
+              'documentType': widget.item.type,
+              'sha256': digest,
+            },
+          ),
+        ),
+      );
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não foi possível preparar o QR deste documento.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Não foi possível preparar o QR deste documento.'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => working = false);
     }
   }
 
-  Widget _fileButtons(String file, String name, String mime) => Wrap(spacing: 8, children: [
-    OutlinedButton.icon(onPressed: working ? null : () => _shareQr(file),
-      icon: const Icon(Icons.qr_code), label: const Text('QR do documento')),
-    FilledButton.icon(onPressed: working ? null : () => _fileAction(file, name, mime, false),
-      icon: const Icon(Icons.open_in_new), label: const Text('Abrir')),
-    OutlinedButton.icon(onPressed: working ? null : () => _fileAction(file, name, mime, true),
-      icon: const Icon(Icons.download_outlined), label: const Text('Guardar cópia')),
-  ]);
+  Widget _fileButtons(String file, String name, String mime) => Wrap(
+    spacing: 8,
+    children: [
+      FilledButton.icon(
+        onPressed: working
+            ? null
+            : () => _fileAction(file, name, mime, true, share: true),
+        icon: const Icon(Icons.share_outlined),
+        label: const Text('Partilhar ficheiro'),
+      ),
+      OutlinedButton.icon(
+        onPressed: working ? null : () => _shareQr(file),
+        icon: const Icon(Icons.qr_code),
+        label: const Text('QR do documento'),
+      ),
+      FilledButton.icon(
+        onPressed: working ? null : () => _fileAction(file, name, mime, false),
+        icon: const Icon(Icons.open_in_new),
+        label: const Text('Abrir'),
+      ),
+      OutlinedButton.icon(
+        onPressed: working ? null : () => _fileAction(file, name, mime, true),
+        icon: const Icon(Icons.download_outlined),
+        label: const Text('Guardar cópia'),
+      ),
+    ],
+  );
 
   Future<void> _delete() async {
-    final yes = await showDialog<bool>(
+    final yes =
+        await showDialog<bool>(
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Apagar documento?'),
-            content: const Text('A cópia cifrada será removida deste dispositivo.'),
+            content: const Text(
+              'A cópia cifrada será removida deste dispositivo.',
+            ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-              FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Apagar')),
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Apagar'),
+              ),
             ],
           ),
         ) ??
@@ -456,7 +668,15 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.item.title), actions: [IconButton(onPressed: working ? null : _delete, icon: const Icon(Icons.delete_outline))]),
+      appBar: AppBar(
+        title: Text(widget.item.title),
+        actions: [
+          IconButton(
+            onPressed: working ? null : _delete,
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
+      ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -466,20 +686,46 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                 if (working) const LinearProgressIndicator(),
                 const Chip(label: Text('CÓPIA DIGITAL · NÃO VERIFICADA')),
                 const SizedBox(height: 12),
-                Text(widget.item.type, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+                Text(
+                  widget.item.type,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
                 const SizedBox(height: 18),
                 if (front != null) ...[
-                  const Text('Frente', style: TextStyle(fontWeight: FontWeight.w800)),
+                  const Text(
+                    'Frente',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
                   const SizedBox(height: 8),
-                  ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.memory(front!)),
-                  _fileButtons(widget.item.frontFile!, 'frente.jpg', 'image/jpeg'),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.memory(front!),
+                  ),
+                  _fileButtons(
+                    widget.item.frontFile!,
+                    'frente.jpg',
+                    'image/jpeg',
+                  ),
                   const SizedBox(height: 18),
                 ],
                 if (back != null) ...[
-                  const Text('Verso', style: TextStyle(fontWeight: FontWeight.w800)),
+                  const Text(
+                    'Verso',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
                   const SizedBox(height: 8),
-                  ClipRRect(borderRadius: BorderRadius.circular(16), child: Image.memory(back!)),
-                  _fileButtons(widget.item.backFile!, 'verso.jpg', 'image/jpeg'),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.memory(back!),
+                  ),
+                  _fileButtons(
+                    widget.item.backFile!,
+                    'verso.jpg',
+                    'image/jpeg',
+                  ),
                   const SizedBox(height: 18),
                 ],
                 if (widget.item.attachmentName != null)
@@ -487,11 +733,17 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                     child: ListTile(
                       leading: const Icon(Icons.picture_as_pdf_outlined),
                       title: Text(widget.item.attachmentName!),
-                      subtitle: Text(widget.item.attachmentMime ?? 'ficheiro cifrado'),
+                      subtitle: Text(
+                        widget.item.attachmentMime ?? 'ficheiro cifrado',
+                      ),
                     ),
                   ),
                 if (widget.item.attachmentFile != null)
-                  _fileButtons(widget.item.attachmentFile!, widget.item.attachmentName ?? 'documento.pdf', widget.item.attachmentMime ?? 'application/pdf'),
+                  _fileButtons(
+                    widget.item.attachmentFile!,
+                    widget.item.attachmentName ?? 'documento.pdf',
+                    widget.item.attachmentMime ?? 'application/pdf',
+                  ),
                 const SizedBox(height: 12),
                 const Text(
                   'Esta cópia serve apenas para armazenamento privado e consulta. Não substitui o documento físico nem uma credencial digital emitida por autoridade competente.',

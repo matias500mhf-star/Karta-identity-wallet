@@ -2,28 +2,84 @@ package com.karta.identity.karta_wallet
 
 import android.app.Activity
 import android.content.Intent
+import android.content.ClipData
+import android.os.Bundle
+import android.view.WindowManager
+import androidx.core.content.FileProvider
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.concurrent.Executors
 
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
     private val worker = Executors.newSingleThreadExecutor()
     private var renderer: PdfRenderer? = null
     private var pdfFile: File? = null
     private var exportResult: MethodChannel.Result? = null
     private var exportBytes: ByteArray? = null
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        cleanShares()
+    }
+
+    private fun cleanShares() {
+        File(cacheDir, "karta-shares").listFiles()?.filter {
+            System.currentTimeMillis() - it.lastModified() > 3600000
+        }?.forEach { it.delete() }
+    }
+
     override fun configureFlutterEngine(engine: FlutterEngine) {
         super.configureFlutterEngine(engine)
         MethodChannel(engine.dartExecutor.binaryMessenger, "karta/documents").setMethodCallHandler { call, result ->
-            if (call.method == "exportFile") {
+            if (call.method == "shareFile") {
+                val bytes = call.argument<ByteArray>("bytes")
+                if (bytes == null) {
+                    result.error("invalid", "Ficheiro indisponível.", null)
+                    return@setMethodCallHandler
+                }
+                val requestedName = call.argument<String>("name") ?: "documento"
+                val mime = call.argument<String>("mime") ?: "application/octet-stream"
+                worker.execute {
+                    var shared: File? = null
+                    try {
+                        cleanShares()
+                        val dir = File(cacheDir, "karta-shares").apply { mkdirs() }
+                        val safeName = requestedName.replace(Regex("[^a-zA-Z0-9._-]"), "_").takeLast(100)
+                        val file = File(dir, "${java.util.UUID.randomUUID()}-$safeName")
+                        shared = file
+                        file.writeBytes(bytes)
+                        val uri = FileProvider.getUriForFile(this, "$packageName.karta.files", file)
+                        runOnUiThread {
+                            try {
+                                val send = Intent(Intent.ACTION_SEND).apply {
+                                    type = mime
+                                    putExtra(Intent.EXTRA_STREAM, uri)
+                                    clipData = ClipData.newRawUri("KARTA", uri)
+                                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                }
+                                startActivity(Intent.createChooser(send, "Partilhar com…"))
+                                // Chooser launch is not proof of delivery.
+                                result.success(null)
+                                android.os.Handler(mainLooper).postDelayed({ file.delete() }, 3600000)
+                            } catch (_: Exception) {
+                                file.delete()
+                                result.error("share", "Não foi possível abrir a partilha.", null)
+                            }
+                        }
+                    } catch (_: Exception) {
+                        shared?.delete()
+                        runOnUiThread { result.error("share", "Não foi possível preparar a partilha.", null) }
+                    }
+                }
+            } else if (call.method == "exportFile") {
                 if (exportResult != null) {
                     result.error("busy", "Já existe uma exportação em curso.", null)
                     return@setMethodCallHandler
