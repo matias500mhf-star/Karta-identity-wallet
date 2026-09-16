@@ -1,6 +1,6 @@
 # KARTA online beta — ready-to-deploy integration
 
-Status: code/integration under test; NO live endpoint, domain, hosting subscription, public registration or production claim.
+Status: API integration tests, Flutter analysis/tests and debug APK build passed on 16 September 2026. Physical-device validation and independent security review remain pending. NO live endpoint, domain, hosting subscription, public registration or production claim. See [Alpha 0.9 validation](../releases/alpha-09.md).
 
 ## Scope
 
