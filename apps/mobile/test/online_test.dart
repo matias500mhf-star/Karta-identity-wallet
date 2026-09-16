@@ -33,8 +33,9 @@ void main() {
       baseUrl: 'https://example.invalid/api/v1/',
       client: MockClient((r) async {
         expect(r.followRedirects, isFalse);
-        if (r.url.path.endsWith('/auth/login'))
+        if (r.url.path.endsWith('/auth/login')) {
           return http.Response('{"accessToken":"test-token"}', 201);
+        }
         expect(r.headers['Authorization'], 'Bearer test-token');
         expect(r.url.path, '/api/v1/backups/latest');
         if (r.method == 'PUT') {
