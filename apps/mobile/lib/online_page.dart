@@ -68,10 +68,11 @@ class _OnlinePageState extends State<OnlinePage> {
       throw const ApiException('Preencha o email e a palavra-passe da conta.');
     }
     if (registering) {
-      if (password.text.length < 12)
+      if (password.text.length < 12) {
         throw const ApiException(
           'Use pelo menos 12 caracteres na palavra-passe da conta.',
         );
+      }
       await api.register(email.text, password.text, invite.text);
     }
     await api.login(email.text, password.text);
