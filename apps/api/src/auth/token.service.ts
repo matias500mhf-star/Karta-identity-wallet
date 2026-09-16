@@ -6,6 +6,7 @@ export interface AccessTokenPayload {
   sub: string;
   email: string;
   type: 'access';
+  sid: string;
   iat: number;
   exp: number;
 }
@@ -32,9 +33,9 @@ export class TokenService {
     return secret;
   }
 
-  issueAccessToken(userId: string, email: string): string {
+  issueAccessToken(userId: string, email: string, sessionId: string): string {
     const now = Math.floor(Date.now() / 1000);
-    const payload: AccessTokenPayload = { sub: userId, email, type: 'access', iat: now, exp: now + ACCESS_TOKEN_TTL_SECONDS };
+    const payload: AccessTokenPayload = { sub: userId, email, sid: sessionId, type: 'access', iat: now, exp: now + ACCESS_TOKEN_TTL_SECONDS };
     return this.sign(payload, this.accessSecret);
   }
 
@@ -59,6 +60,7 @@ export class TokenService {
   }
 
   private verify<T extends { type?: string; sub?: string; exp?: number }>(token: string, secret: string, expectedType: string): T {
+    if (token.length > 4096 || token.split('.').length !== 2) throw new UnauthorizedException('Invalid token');
     const [body, signature] = token.split('.');
     if (!body || !signature) throw new UnauthorizedException('Invalid token');
     const expected = createHmac('sha256', secret).update(body).digest('base64url');
@@ -71,7 +73,7 @@ export class TokenService {
     } catch {
       throw new UnauthorizedException('Invalid token');
     }
-    if (payload.type !== expectedType || !payload.sub || !payload.exp || payload.exp <= Math.floor(Date.now() / 1000)) {
+    if (!payload || typeof payload !== 'object' || typeof payload.sub !== 'string' || typeof payload.exp !== 'number' || payload.type !== expectedType || !payload.sub || !payload.exp || payload.exp <= Math.floor(Date.now() / 1000)) {
       throw new UnauthorizedException('Expired or invalid token');
     }
     return payload;

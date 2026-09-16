@@ -1,0 +1,43 @@
+import { Test } from '@nestjs/testing';
+import { INestApplication, ValidationPipe } from '@nestjs/common';
+import request = require('supertest');
+import { randomBytes } from 'node:crypto';
+import { AppModule } from '../app.module';
+import { PrismaService } from '../database/prisma.service';
+const describeDB = process.env.RUN_DATABASE_TESTS === 'true' ? describe : describe.skip;
+describeDB('online account and encrypted backups (PostgreSQL)', () => {
+  let app: INestApplication; let db: PrismaService;
+  const suffix = randomBytes(8).toString('hex');
+  const a = `a-${suffix}@example.invalid`, b = `b-${suffix}@example.invalid`;
+  const password = 'only-a-fixture-password-42'; const invite = 'test-invite-' + suffix;
+  beforeAll(async () => {
+    process.env.JWT_ACCESS_SECRET = 'test-only-secret-'.repeat(4); process.env.BETA_INVITE_CODE = invite;
+    const module = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    app = module.createNestApplication(); app.setGlobalPrefix('api/v1');
+    app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+    await app.init(); db = app.get(PrismaService);
+  });
+  afterAll(async () => { if (db) await db.user.deleteMany({ where: { email: { in: [a, b] } } }); if (app) await app.close(); });
+  it('isolates owners, verifies bytes, revokes sessions and cascades account deletion', async () => {
+    const server = app.getHttpServer();
+    await request(server).post('/api/v1/auth/register').send({ email: a, password }).expect(403);
+    for (const email of [a, b]) await request(server).post('/api/v1/auth/register').set('X-Karta-Invite', invite).send({ email, password }).expect(201);
+    const login = async (email: string) => (await request(server).post('/api/v1/auth/login').send({ email, password }).expect(201)).body.accessToken;
+    const ta = await login(a), tb = await login(b);
+    const payload = Buffer.from(JSON.stringify({ format: 'karta-backup', version: 1, salt: randomBytes(16).toString('base64'), nonce: randomBytes(12).toString('base64'), mac: randomBytes(16).toString('base64'), ciphertext: randomBytes(256).toString('base64') }));
+    await request(server).put('/api/v1/backups/latest').set('Content-Type', 'application/octet-stream').send(payload).expect(401);
+    await request(server).put('/api/v1/backups/latest').auth(ta, { type: 'bearer' }).set('Content-Type', 'application/octet-stream').send(payload).expect(200);
+    const download = await request(server).get('/api/v1/backups/latest').auth(ta, { type: 'bearer' }).expect(200);
+    expect(download.body).toEqual(payload);
+    await request(server).get('/api/v1/backups/latest').auth(tb, { type: 'bearer' }).expect(404);
+    await request(server).delete('/api/v1/backups/latest').auth(tb, { type: 'bearer' }).expect(200);
+    await request(server).get('/api/v1/backups/latest').auth(ta, { type: 'bearer' }).expect(200);
+    await request(server).post('/api/v1/auth/logout').auth(ta, { type: 'bearer' }).expect(201);
+    await request(server).get('/api/v1/backups/latest').auth(ta, { type: 'bearer' }).expect(401);
+    const ta2 = await login(a);
+    await request(server).delete('/api/v1/auth/account').auth(ta2, { type: 'bearer' }).send({ password: 'wrong' }).expect(401);
+    await request(server).delete('/api/v1/auth/account').auth(ta2, { type: 'bearer' }).send({ password }).expect(200);
+    expect(await db.user.findUnique({ where: { email: a } })).toBeNull();
+    await request(server).get('/api/v1/backups/latest').auth(ta2, { type: 'bearer' }).expect(401);
+  }, 30000);
+});

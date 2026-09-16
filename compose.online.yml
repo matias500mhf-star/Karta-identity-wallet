@@ -1,0 +1,27 @@
+# Local staging only. Put a managed HTTPS ingress in front before public use.
+services:
+  database:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: karta
+      POSTGRES_PASSWORD: ${KARTA_DATABASE_PASSWORD:?Set a database password}
+      POSTGRES_DB: karta
+    volumes: [karta_database:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U karta -d karta']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  api:
+    build: ./apps/api
+    environment:
+      DATABASE_URL: postgresql://karta:${KARTA_DATABASE_PASSWORD}@database:5432/karta
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?Set a random access secret}
+      BETA_INVITE_CODE: ${BETA_INVITE_CODE:?Set a beta invite code}
+      NODE_ENV: production
+    ports: ['127.0.0.1:3000:3000']
+    depends_on:
+      database:
+        condition: service_healthy
+volumes:
+  karta_database:

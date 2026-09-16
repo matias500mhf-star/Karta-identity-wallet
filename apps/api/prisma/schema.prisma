@@ -18,6 +18,8 @@ model User {
   documents       Document[]
   auditLogs       AuditLog[]
   sharesCreated   DocumentShare[] @relation("ShareCreator")
+  onlineBackup    OnlineBackup?
+  sessions        AuthSession[]
 
   @@map("users")
 }
@@ -118,4 +120,24 @@ enum DocumentStatus {
   VERIFIED
   EXPIRED
   REVOKED
+}
+
+model OnlineBackup {
+  userId    String   @id @map("user_id") @db.Uuid
+  payload   Bytes
+  size      Int
+  digest    String   @db.Char(64)
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("online_backups")
+}
+
+model AuthSession {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  expiresAt DateTime @map("expires_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_sessions")
 }

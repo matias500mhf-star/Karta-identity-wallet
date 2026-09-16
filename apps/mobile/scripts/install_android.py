@@ -9,6 +9,8 @@ shutil.copyfile(root / 'platform/android/MainActivity.kt', target)
 import re
 manifest = root / 'android/app/src/main/AndroidManifest.xml'
 text = manifest.read_text()
+if 'android.permission.INTERNET' not in text:
+    text = text.replace('<application', '<uses-permission android:name="android.permission.INTERNET"/>\n    <application', 1)
 if 'android.permission.USE_BIOMETRIC' not in text:
     text = text.replace('<application', '<uses-permission android:name="android.permission.USE_BIOMETRIC"/>\n    <application', 1)
 if '${applicationId}.karta.files' not in text:
