@@ -47,6 +47,20 @@ void main() {
       expect(document.daysUntilExpiry(now: DateTime.utc(2026, 9, 18)), -1);
     });
 
+    test('keeps a document usable through its stated expiry day', () {
+      final document = VaultDocument(
+        id: 'doc-today',
+        type: 'Passaporte',
+        title: 'Passaporte',
+        createdAt: DateTime.utc(2026, 1, 1),
+        expiresAt: DateTime.utc(2026, 9, 18),
+      );
+
+      expect(document.expiryState(now: DateTime.utc(2026, 9, 18, 23, 59)),
+          DocumentExpiryState.expiringSoon);
+      expect(document.daysUntilExpiry(now: DateTime.utc(2026, 9, 18, 23, 59)), 0);
+    });
+
     test('reports documents expiring inside the 90 day attention window', () {
       final document = VaultDocument(
         id: 'doc-soon',
