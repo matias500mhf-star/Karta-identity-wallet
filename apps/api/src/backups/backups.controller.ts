@@ -5,6 +5,27 @@ import { BackupsService, MAX_BACKUP_BYTES } from './backups.service';
 import { Throttle } from '@nestjs/throttler';
 type BackupRequest = IncomingMessage & { user: { sub: string } };
 
+function singleHeader(value: string | string[] | undefined) {
+  if (Array.isArray(value)) throw new BadRequestException('Precondição de backup inválida.');
+  return value?.trim();
+}
+
+function parseWriteCondition(req: BackupRequest) {
+  const ifMatch = singleHeader(req.headers['if-match']);
+  const ifNoneMatch = singleHeader(req.headers['if-none-match']);
+  if (ifMatch && ifNoneMatch) throw new BadRequestException('Use apenas uma precondição de backup.');
+  if (ifNoneMatch) {
+    if (ifNoneMatch !== '*') throw new BadRequestException('Precondição de backup inválida.');
+    return { ifNoneMatch: true };
+  }
+  if (ifMatch) {
+    const match = /^"([0-9a-f]{64})"$/i.exec(ifMatch);
+    if (!match) throw new BadRequestException('Precondição de backup inválida.');
+    return { ifMatch: match[1] };
+  }
+  return {};
+}
+
 @Controller('backups/latest') @UseGuards(AuthGuard)
 @Throttle({ default: { limit: 10, ttl: 60000 } })
 export class BackupsController {
@@ -22,14 +43,14 @@ export class BackupsController {
       if (size > MAX_BACKUP_BYTES) throw new HttpException('Backup demasiado grande.', 413);
       chunks.push(Buffer.from(chunk));
     }
-    return this.backups.put(req.user.sub, Buffer.concat(chunks));
+    return this.backups.put(req.user.sub, Buffer.concat(chunks), parseWriteCondition(req));
   }
   @Get()
   async get(@Req() req: BackupRequest, @Res() res: ServerResponse) {
     const row = await this.backups.get(req.user.sub);
     res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': row.size,
       'Cache-Control': 'no-store', 'Content-Disposition': 'attachment; filename="karta-backup.kartabackup"',
-      'X-Content-SHA256': row.digest });
+      'ETag': `"${row.digest}"`, 'X-Content-SHA256': row.digest });
     res.end(Buffer.from(row.payload));
   }
   @Delete() @Header('Cache-Control', 'no-store')
