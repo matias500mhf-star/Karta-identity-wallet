@@ -21,6 +21,7 @@ class ApiService {
   final String baseUrl;
   final http.Client _client;
   String? accessToken;
+  String? _latestBackupDigest;
   bool get configured => baseUrl.isNotEmpty;
   Uri _url(String path) {
     final uri = Uri.tryParse(baseUrl);
@@ -82,6 +83,7 @@ class ApiService {
       );
       if (response.statusCode == 401) {
         accessToken = null;
+        _latestBackupDigest = null;
         throw const ApiException(
           'Sessão expirada ou dados de acesso incorretos. Entre novamente.',
         );
@@ -147,21 +149,32 @@ class ApiService {
       throw const ApiException('Resposta de autenticação inválida.');
     }
     accessToken = token;
+    _latestBackupDigest = null;
   }
 
   Future<Map<String, dynamic>?> metadata() async {
     final r = await _request('GET', '/backups/latest/metadata');
-    if (r.body.isEmpty || r.body == 'null') return null;
-    return Map<String, dynamic>.from(jsonDecode(r.body) as Map);
+    if (r.body.isEmpty || r.body == 'null') {
+      _latestBackupDigest = null;
+      return null;
+    }
+    final data = Map<String, dynamic>.from(jsonDecode(r.body) as Map);
+    final digest = data['digest'];
+    if (digest is! String || !RegExp(r'^[0-9a-f]{64}$').hasMatch(digest)) {
+      throw const ApiException('Metadados do backup inválidos.');
+    }
+    _latestBackupDigest = digest;
+    return data;
   }
 
   Future<void> upload(Uint8List bytes, {String? expectedDigest}) async {
     if (bytes.length > BackupCodec.maxBytes) {
       throw const ApiException('Backup demasiado grande.');
     }
-    final conditionalHeaders = expectedDigest == null
+    final expected = expectedDigest ?? _latestBackupDigest;
+    final conditionalHeaders = expected == null
         ? const {'If-None-Match': '*'}
-        : {'If-Match': '"$expectedDigest"'};
+        : {'If-Match': '"$expected"'};
     final r = await _request(
       'PUT',
       '/backups/latest',
@@ -169,12 +182,13 @@ class ApiService {
       headers: conditionalHeaders,
     );
     final meta = jsonDecode(r.body) as Map;
-    if (meta['digest'] != await KartaQr.fingerprint(bytes) ||
-        meta['size'] != bytes.length) {
+    final digest = await KartaQr.fingerprint(bytes);
+    if (meta['digest'] != digest || meta['size'] != bytes.length) {
       throw const ApiException(
         'Não foi possível confirmar a integridade do backup enviado.',
       );
     }
+    _latestBackupDigest = digest;
   }
 
   Future<Uint8List> download() async {
@@ -190,11 +204,13 @@ class ApiService {
 
   Future<void> deleteBackup() async {
     await _request('DELETE', '/backups/latest');
+    _latestBackupDigest = null;
   }
 
   Future<void> deleteAccount(String password) async {
     await _request('DELETE', '/auth/account', json: {'password': password});
     accessToken = null;
+    _latestBackupDigest = null;
   }
 
   Future<void> logout() async {
@@ -202,11 +218,13 @@ class ApiService {
       await _request('POST', '/auth/logout');
     } finally {
       accessToken = null;
+      _latestBackupDigest = null;
     }
   }
 
   void close() {
     accessToken = null;
+    _latestBackupDigest = null;
     _client.close();
   }
 }
