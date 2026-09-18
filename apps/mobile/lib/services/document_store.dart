@@ -7,12 +7,16 @@ import 'package:cryptography/cryptography.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 
+enum DocumentExpiryState { unknown, valid, expiringSoon, expired }
+
 class VaultDocument {
   const VaultDocument({
     required this.id,
     required this.type,
     required this.title,
     required this.createdAt,
+    this.issuedAt,
+    this.expiresAt,
     this.frontFile,
     this.backFile,
     this.attachmentFile,
@@ -24,6 +28,8 @@ class VaultDocument {
   final String type;
   final String title;
   final DateTime createdAt;
+  final DateTime? issuedAt;
+  final DateTime? expiresAt;
   final String? frontFile;
   final String? backFile;
   final String? attachmentFile;
@@ -35,6 +41,8 @@ class VaultDocument {
         'type': type,
         'title': title,
         'createdAt': createdAt.toUtc().toIso8601String(),
+        'issuedAt': issuedAt?.toUtc().toIso8601String(),
+        'expiresAt': expiresAt?.toUtc().toIso8601String(),
         'frontFile': frontFile,
         'backFile': backFile,
         'attachmentFile': attachmentFile,
@@ -48,12 +56,35 @@ class VaultDocument {
         title: json['title']?.toString() ?? 'Documento',
         createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
             DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+        issuedAt: DateTime.tryParse(json['issuedAt']?.toString() ?? '')?.toUtc(),
+        expiresAt: DateTime.tryParse(json['expiresAt']?.toString() ?? '')?.toUtc(),
         frontFile: json['frontFile']?.toString(),
         backFile: json['backFile']?.toString(),
         attachmentFile: json['attachmentFile']?.toString(),
         attachmentName: json['attachmentName']?.toString(),
         attachmentMime: json['attachmentMime']?.toString(),
       );
+
+  DocumentExpiryState expiryState({DateTime? now, int warningDays = 90}) {
+    if (expiresAt == null) return DocumentExpiryState.unknown;
+    final today = _dateOnlyUtc((now ?? DateTime.now()).toUtc());
+    final expiry = _dateOnlyUtc(expiresAt!.toUtc());
+    if (expiry.isBefore(today)) return DocumentExpiryState.expired;
+    final days = expiry.difference(today).inDays;
+    return days <= warningDays
+        ? DocumentExpiryState.expiringSoon
+        : DocumentExpiryState.valid;
+  }
+
+  int? daysUntilExpiry({DateTime? now}) {
+    if (expiresAt == null) return null;
+    final today = _dateOnlyUtc((now ?? DateTime.now()).toUtc());
+    final expiry = _dateOnlyUtc(expiresAt!.toUtc());
+    return expiry.difference(today).inDays;
+  }
+
+  static DateTime _dateOnlyUtc(DateTime value) =>
+      DateTime.utc(value.year, value.month, value.day);
 }
 
 class DocumentStore {
@@ -84,6 +115,8 @@ class DocumentStore {
   Future<VaultDocument> add({
     required String type,
     required String title,
+    DateTime? issuedAt,
+    DateTime? expiresAt,
     Uint8List? frontBytes,
     Uint8List? backBytes,
     Uint8List? attachmentBytes,
@@ -93,10 +126,17 @@ class DocumentStore {
     if (frontBytes == null && backBytes == null && attachmentBytes == null) {
       throw ArgumentError('At least one document file is required.');
     }
+    if (issuedAt != null && expiresAt != null && expiresAt.isBefore(issuedAt)) {
+      throw ArgumentError('Expiry date cannot be before issue date.');
+    }
     final now = DateTime.now().toUtc();
     final id = now.microsecondsSinceEpoch.toString();
-    final front = frontBytes == null ? null : await _writeEncrypted('$id-front.karta', frontBytes);
-    final back = backBytes == null ? null : await _writeEncrypted('$id-back.karta', backBytes);
+    final front = frontBytes == null
+        ? null
+        : await _writeEncrypted('$id-front.karta', frontBytes);
+    final back = backBytes == null
+        ? null
+        : await _writeEncrypted('$id-back.karta', backBytes);
     final attachment = attachmentBytes == null
         ? null
         : await _writeEncrypted('$id-attachment.karta', attachmentBytes);
@@ -106,6 +146,8 @@ class DocumentStore {
       type: type.trim(),
       title: title.trim().isEmpty ? type.trim() : title.trim(),
       createdAt: now,
+      issuedAt: issuedAt?.toUtc(),
+      expiresAt: expiresAt?.toUtc(),
       frontFile: front,
       backFile: back,
       attachmentFile: attachment,
