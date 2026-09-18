@@ -33,13 +33,17 @@ jobs:
       - name: Generate Android platform scaffold
         run: flutter create --platforms=android --android-language=kotlin --project-name=karta_wallet --org=com.karta.identity --no-pub .
 
-      - name: Install native PDF and export bridge
+      - name: Install native bridge and KARTA branding
         run: python3 scripts/install_android.py
 
-      - name: Mark launcher as KARTA 0.9 RC1
+      - name: Verify KARTA launcher branding
+        shell: bash
         run: |
-          sed -i 's/android:label="karta_wallet"/android:label="KARTA 0.9 RC1"/' android/app/src/main/AndroidManifest.xml
-          grep -n 'android:label' android/app/src/main/AndroidManifest.xml
+          set -euo pipefail
+          grep -n 'android:label="KARTA"' android/app/src/main/AndroidManifest.xml
+          grep -n '@drawable/karta_launcher' android/app/src/main/AndroidManifest.xml
+          test -f android/app/src/main/res/drawable/karta_launcher.xml
+          test -f android/app/src/main/res/drawable/launch_background.xml
 
       - name: Resolve dependencies
         run: flutter pub get
@@ -53,10 +57,10 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
 
-      - name: Upload RC1 debug APK
+      - name: Upload RC1 build 13 debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: karta-0.9-rc1-debug-apk
+          name: karta-0.9-rc1-build13-debug-apk
           path: apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 14
