@@ -1,0 +1,41 @@
+name: Export Android apksigner tool
+
+on:
+  push:
+    branches: ['release/**']
+    paths:
+      - '.github/workflows/export-apksigner.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Locate latest apksigner
+        shell: bash
+        run: |
+          set -euo pipefail
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -type f -name apksigner | sort -V | tail -n 1)
+          test -n "$APKSIGNER"
+          TOOL_DIR=$(dirname "$APKSIGNER")
+          echo "TOOL_DIR=$TOOL_DIR" >> "$GITHUB_ENV"
+          "$APKSIGNER" version
+
+      - name: Package apksigner runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          cp "$TOOL_DIR/apksigner" out/
+          cp -R "$TOOL_DIR/lib" out/
+          tar -czf apksigner-linux.tgz -C out apksigner lib
+
+      - name: Upload apksigner runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apksigner-runtime
+          path: apksigner-linux.tgz
+          if-no-files-found: error
+          retention-days: 1
