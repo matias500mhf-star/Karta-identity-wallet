@@ -67,8 +67,8 @@ class VaultDocument {
 
   DocumentExpiryState expiryState({DateTime? now, int warningDays = 90}) {
     if (expiresAt == null) return DocumentExpiryState.unknown;
-    final today = _dateOnlyUtc((now ?? DateTime.now()).toUtc());
-    final expiry = _dateOnlyUtc(expiresAt!.toUtc());
+    final today = _dateOnlyUtc(now ?? DateTime.now());
+    final expiry = _dateOnlyUtc(expiresAt!);
     if (expiry.isBefore(today)) return DocumentExpiryState.expired;
     final days = expiry.difference(today).inDays;
     return days <= warningDays
@@ -78,8 +78,8 @@ class VaultDocument {
 
   int? daysUntilExpiry({DateTime? now}) {
     if (expiresAt == null) return null;
-    final today = _dateOnlyUtc((now ?? DateTime.now()).toUtc());
-    final expiry = _dateOnlyUtc(expiresAt!.toUtc());
+    final today = _dateOnlyUtc(now ?? DateTime.now());
+    final expiry = _dateOnlyUtc(expiresAt!);
     return expiry.difference(today).inDays;
   }
 
