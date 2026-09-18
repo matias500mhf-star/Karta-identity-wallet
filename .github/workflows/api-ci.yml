@@ -9,7 +9,19 @@ on:
 jobs:
   api:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: karta
+          POSTGRES_PASSWORD: karta
+          POSTGRES_DB: karta_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U karta -d karta_ci"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     env:
+      RUN_DATABASE_TESTS: 'true'
       # Prisma validate/generate require a syntactically valid URL, but do not connect to it.
       DATABASE_URL: postgresql://karta:karta@localhost:5432/karta_ci
     defaults:
@@ -22,8 +34,9 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: apps/api/package.json
-      - run: npm install
+      - run: npm ci
       - run: npx prisma validate
       - run: npx prisma generate
+      - run: npx prisma migrate deploy
       - run: npm run build
       - run: npm test -- --runInBand

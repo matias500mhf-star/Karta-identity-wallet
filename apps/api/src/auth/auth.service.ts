@@ -20,6 +20,9 @@ export class AuthService {
     const user = await this.prisma.user.create({
       data: { email, passwordHash },
       select: { id: true, email: true, status: true, createdAt: true },
+    }).catch((error: { code?: string }) => {
+      if (error.code === 'P2002') throw new ConflictException('Email already registered');
+      throw error;
     });
 
     return user;
@@ -28,7 +31,10 @@ export class AuthService {
   async validateCredentials(dto: LoginDto) {
     const email = dto.email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user || user.status !== 'ACTIVE') throw new UnauthorizedException('Invalid credentials');
+    if (!user || user.status !== 'ACTIVE') {
+      await this.passwords.hash(dto.password);
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     const valid = await this.passwords.verify(dto.password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Invalid credentials');

@@ -3,6 +3,7 @@ import 'session_guard.dart';
 import 'services/biometric_service.dart';
 import 'security_page.dart';
 import 'backup_page.dart';
+import 'online_page.dart';
 import 'services/backup_store.dart';
 import 'premium_widgets.dart';
 import 'brand_theme.dart';
@@ -168,8 +169,28 @@ class _WelcomePageState extends State<WelcomePage> {
               icon: const Icon(Icons.restore),
               label: const Text('Restaurar um backup'),
             ),
+            TextButton.icon(
+              onPressed: () async {
+                final restored = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const OnlinePage(restore: true),
+                  ),
+                );
+                if (restored == true && context.mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute<void>(
+                      builder: (_) => UnlockPage(store: widget.store),
+                    ),
+                    (_) => false,
+                  );
+                }
+              },
+              icon: const Icon(Icons.cloud_download_outlined),
+              label: const Text('Recuperar backup online'),
+            ),
             const Text(
-              'KARTA Alpha 0.8 · HMATIAS',
+              'KARTA Alpha 0.9 · HMATIAS',
               textAlign: TextAlign.center,
               style: TextStyle(color: HmatiasBrand.muted, fontSize: 12),
             ),
@@ -305,7 +326,12 @@ class _CreatePinPageState extends State<CreatePinPage> {
 }
 
 class UnlockPage extends StatefulWidget {
-  const UnlockPage({super.key, required this.store, this.onUnlocked, this.biometricService});
+  const UnlockPage({
+    super.key,
+    required this.store,
+    this.onUnlocked,
+    this.biometricService,
+  });
   final SessionStore store;
   final VoidCallback? onUnlocked;
   final BiometricService? biometricService;
@@ -687,6 +713,18 @@ class _WalletPageState extends State<WalletPage> {
         const SizedBox(height: 18),
         const KartaBrandHeader(),
         const SizedBox(height: 24),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.cloud_outlined),
+            title: const Text('Conta e backup online'),
+            subtitle: const Text('Ligação opcional · beta'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push<void>(
+              context,
+              MaterialPageRoute(builder: (_) => const OnlinePage()),
+            ),
+          ),
+        ),
         const Text(
           'Definições',
           style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900),
@@ -757,7 +795,7 @@ class _WalletPageState extends State<WalletPage> {
         const Card(
           child: ListTile(
             leading: Icon(Icons.info_outline),
-            title: Text('KARTA Alpha 0.8'),
+            title: Text('KARTA Alpha 0.9'),
             subtitle: Text('Um produto HMATIAS · Documentos e QR'),
           ),
         ),
