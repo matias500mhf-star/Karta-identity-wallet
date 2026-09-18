@@ -36,9 +36,17 @@ jobs:
       - name: Install native PDF and export bridge
         run: python3 scripts/install_android.py
 
-      - name: Mark launcher as Alpha 0.9 Document Vault
+      # Diagnostic build only: a distinct package lets Alpha 0.9 install beside an
+      # older KARTA build whose ephemeral CI debug certificate cannot be recovered.
+      # Do not merge this applicationId into the production/release line.
+      - name: Use migration-safe side-by-side beta package
         run: |
-          sed -i 's/android:label="karta_wallet"/android:label="KARTA ALPHA 0.9"/' android/app/src/main/AndroidManifest.xml
+          sed -i 's/applicationId = "com.karta.identity.karta_wallet"/applicationId = "com.karta.identity.karta_wallet.beta"/' android/app/build.gradle.kts
+          grep -n 'applicationId' android/app/build.gradle.kts
+
+      - name: Mark launcher as Alpha 0.9 Beta
+        run: |
+          sed -i 's/android:label="karta_wallet"/android:label="KARTA ALPHA 0.9 BETA"/' android/app/src/main/AndroidManifest.xml
           grep -n 'android:label' android/app/src/main/AndroidManifest.xml
 
       - name: Resolve dependencies
@@ -56,7 +64,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: karta-alpha-09-online-beta-apk
+          name: karta-alpha-09-side-by-side-beta-apk
           path: apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 14
