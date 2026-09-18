@@ -2,20 +2,27 @@
 
 **Your identity. Your documents. Your control.**
 
-KARTA is a secure digital identity wallet designed to help people store, manage, and selectively share identity documents and verifiable identity information.
+KARTA is a privacy-focused digital document and identity wallet designed to help users store, organize, protect, back up and selectively share personal documents and identity-related information.
 
-## Alpha 0.1
+> KARTA is not a government-issued identity document and does not claim to replace an official passport, national ID or other state-issued credential.
 
-The first milestone focuses on the secure foundation:
+## Release line
 
-- Account registration and authentication
-- Secure wallet access
-- Document metadata and encrypted document storage architecture
-- Identity profile
-- Audit trail
-- Mobile-first experience
+Current stabilization target: **KARTA 0.9 RC1**.
 
-Future milestones will add OCR/MRZ processing, selective disclosure, QR verification, KARTA Verify, and a business verification API.
+The release-candidate line consolidates the tested Alpha 0.9 feature set, including:
+
+- local-first wallet onboarding;
+- hardened PIN protection and biometric unlock;
+- encrypted local document vault;
+- document import/capture and profile management;
+- PDF viewing and controlled export;
+- selective QR generation and scanning;
+- system sharing for supported document/QR flows;
+- session locking and screenshot protection;
+- password-encrypted local backup and fresh-install restore;
+- optional online account/encrypted-backup beta components;
+- update and migration safety checks.
 
 ## Repository structure
 
@@ -23,21 +30,21 @@ Future milestones will add OCR/MRZ processing, selective disclosure, QR verifica
 apps/
   api/          Backend API
   mobile/       Flutter mobile application
-packages/
-  shared-types/ Shared API/domain types
-  security/     Security-related shared components
-infrastructure/
-  database/     Database migrations and schema
-  storage/      Storage configuration
-  deployment/   Deployment configuration
-docs/
-  architecture/ Architecture decisions
-  api/          API documentation
-  product/      Product specifications
+infrastructure/ Supporting infrastructure
+docs/           Architecture, release and product documentation
+scripts/        Build/update validation helpers
 ```
 
 ## Security
 
-KARTA handles highly sensitive identity information. No real passports, national IDs, or other personal identity documents should be committed to this repository or used in development environments.
+KARTA handles highly sensitive identity information. No real passports, national IDs, private keys, production credentials, secrets or personal identity documents should be committed to this repository or used in development environments.
 
 See [SECURITY.md](SECURITY.md).
+
+## Ownership and licensing
+
+KARTA is proprietary software. Public repository access, testing access or distribution of development builds does not grant permission to copy, modify, redistribute or commercially exploit proprietary KARTA code or assets.
+
+See [LICENSE](LICENSE) and [OWNERSHIP.md](OWNERSHIP.md).
+
+Third-party libraries, fonts and frameworks remain subject to their respective licences.
