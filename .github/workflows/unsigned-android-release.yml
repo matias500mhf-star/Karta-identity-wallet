@@ -1,0 +1,81 @@
+name: KARTA Unsigned Android Release
+
+on:
+  push:
+    branches: ['release/**']
+    paths:
+      - 'apps/mobile/**'
+      - '.github/workflows/unsigned-android-release.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  unsigned-aab:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Android platform scaffold
+        run: flutter create --platforms=android --android-language=kotlin --project-name=karta_wallet --org=com.karta.identity --no-pub .
+
+      - name: Install native PDF and export bridge
+        run: python3 scripts/install_android.py
+
+      - name: Mark launcher as KARTA RC1
+        shell: bash
+        run: |
+          sed -i 's/android:label="karta_wallet"/android:label="KARTA 0.9 RC1"/' android/app/src/main/AndroidManifest.xml
+          grep -n 'android:label' android/app/src/main/AndroidManifest.xml
+
+      - name: Disable debug signing for release bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE=android/app/build.gradle.kts
+          grep -n 'signingConfig' "$FILE" || true
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('android/app/build.gradle.kts')
+          s = p.read_text()
+          old = 'signingConfig = signingConfigs.getByName("debug")'
+          if old not in s:
+              raise SystemExit('Expected Flutter debug release signing line was not found')
+          p.write_text(s.replace(old, 'signingConfig = null', 1))
+          PY
+          grep -n 'signingConfig' "$FILE" || true
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze Dart code
+        run: flutter analyze
+
+      - name: Run Flutter tests
+        run: flutter test
+
+      - name: Build unsigned release AAB
+        run: flutter build appbundle --release
+
+      - name: Record unsigned bundle hash
+        shell: bash
+        run: sha256sum build/app/outputs/bundle/release/app-release.aab | tee build/app-release-unsigned.sha256
+
+      - name: Upload unsigned release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: karta-0.9-rc1-unsigned-aab
+          path: |
+            apps/mobile/build/app/outputs/bundle/release/app-release.aab
+            apps/mobile/build/app-release-unsigned.sha256
+          if-no-files-found: error
+          retention-days: 3
