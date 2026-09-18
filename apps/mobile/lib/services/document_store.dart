@@ -126,7 +126,15 @@ class DocumentStore {
     if (frontBytes == null && backBytes == null && attachmentBytes == null) {
       throw ArgumentError('At least one document file is required.');
     }
-    if (issuedAt != null && expiresAt != null && expiresAt.isBefore(issuedAt)) {
+    final normalizedIssuedAt = issuedAt == null
+        ? null
+        : DateTime.utc(issuedAt.year, issuedAt.month, issuedAt.day);
+    final normalizedExpiresAt = expiresAt == null
+        ? null
+        : DateTime.utc(expiresAt.year, expiresAt.month, expiresAt.day);
+    if (normalizedIssuedAt != null &&
+        normalizedExpiresAt != null &&
+        normalizedExpiresAt.isBefore(normalizedIssuedAt)) {
       throw ArgumentError('Expiry date cannot be before issue date.');
     }
     final now = DateTime.now().toUtc();
@@ -146,8 +154,8 @@ class DocumentStore {
       type: type.trim(),
       title: title.trim().isEmpty ? type.trim() : title.trim(),
       createdAt: now,
-      issuedAt: issuedAt?.toUtc(),
-      expiresAt: expiresAt?.toUtc(),
+      issuedAt: normalizedIssuedAt,
+      expiresAt: normalizedExpiresAt,
       frontFile: front,
       backFile: back,
       attachmentFile: attachment,
