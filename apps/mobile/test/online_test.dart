@@ -41,6 +41,7 @@ void main() {
         if (r.method == 'PUT') {
           expect(r.bodyBytes, bytes);
           expect(r.headers['Content-Type'], 'application/octet-stream');
+          expect(r.headers['If-None-Match'], '*');
           return http.Response(
             jsonEncode({'digest': digest, 'size': bytes.length}),
             200,
@@ -56,6 +57,45 @@ void main() {
     await api.login('test@example.invalid', 'account-password');
     await api.upload(bytes);
     expect(await api.download(), bytes);
+    api.close();
+  });
+  test('uses the known remote digest to prevent stale-device overwrites', () async {
+    final oldBytes = Uint8List.fromList(utf8.encode('old-ciphertext'));
+    final newBytes = Uint8List.fromList(utf8.encode('new-ciphertext'));
+    final oldDigest = await KartaQr.fingerprint(oldBytes);
+    final newDigest = await KartaQr.fingerprint(newBytes);
+    final api = ApiService(
+      baseUrl: 'https://example.invalid/api/v1',
+      client: MockClient((r) async {
+        if (r.method == 'GET' && r.url.path.endsWith('/metadata')) {
+          return http.Response(
+            jsonEncode({'digest': oldDigest, 'size': oldBytes.length, 'updatedAt': 'fixture'}),
+            200,
+          );
+        }
+        if (r.method == 'PUT') {
+          expect(r.headers['If-Match'], '"$oldDigest"');
+          return http.Response(
+            jsonEncode({'digest': newDigest, 'size': newBytes.length}),
+            200,
+          );
+        }
+        return http.Response('not found', 404);
+      }),
+    );
+    api.accessToken = 'test-token';
+    await api.metadata();
+    await api.upload(newBytes);
+    api.close();
+  });
+  test('reports a remote-version conflict instead of overwriting it', () async {
+    final bytes = Uint8List.fromList(utf8.encode('ciphertext'));
+    final api = ApiService(
+      baseUrl: 'https://example.invalid/api/v1',
+      client: MockClient((r) async => http.Response('changed', 412)),
+    );
+    api.accessToken = 'test-token';
+    await expectLater(api.upload(bytes), throwsA(isA<ApiException>()));
     api.close();
   });
   test(

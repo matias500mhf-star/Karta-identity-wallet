@@ -26,7 +26,7 @@ describeDB('online account and encrypted backups (PostgreSQL)', () => {
     const ta = await login(a), tb = await login(b);
     const payload = Buffer.from(JSON.stringify({ format: 'karta-backup', version: 1, salt: randomBytes(16).toString('base64'), nonce: randomBytes(12).toString('base64'), mac: randomBytes(16).toString('base64'), ciphertext: randomBytes(256).toString('base64') }));
     await request(server).put('/api/v1/backups/latest').set('Content-Type', 'application/octet-stream').send(payload).expect(401);
-    await request(server).put('/api/v1/backups/latest').auth(ta, { type: 'bearer' }).set('Content-Type', 'application/octet-stream').send(payload).expect(200);
+    await request(server).put('/api/v1/backups/latest').auth(ta, { type: 'bearer' }).set('Content-Type', 'application/octet-stream').set('If-None-Match', '*').send(payload).expect(200);
     const download = await request(server).get('/api/v1/backups/latest').auth(ta, { type: 'bearer' }).expect(200);
     expect(download.body).toEqual(payload);
     await request(server).get('/api/v1/backups/latest').auth(tb, { type: 'bearer' }).expect(404);

@@ -1,4 +1,4 @@
-import { validateEnvelope } from './backups.service';
+import { validateEnvelope, validateExpectedDigest } from './backups.service';
 import { TokenService } from '../auth/token.service';
 import { randomBytes } from 'node:crypto';
 const envelope = () => Buffer.from(JSON.stringify({ format: 'karta-backup', version: 1, salt: randomBytes(16).toString('base64'), nonce: randomBytes(12).toString('base64'), mac: randomBytes(16).toString('base64'), ciphertext: randomBytes(64).toString('base64') }));
@@ -10,6 +10,12 @@ describe('encrypted backup boundary', () => {
     expect(() => validateEnvelope(Buffer.from(JSON.stringify(data)))).toThrow();
     delete data.password; data.mac = 'AA==';
     expect(() => validateEnvelope(Buffer.from(JSON.stringify(data)))).toThrow();
+  });
+  it('accepts only a SHA-256 digest as a replacement precondition', () => {
+    const digest = 'A'.repeat(64);
+    expect(validateExpectedDigest(digest)).toBe(digest.toLowerCase());
+    expect(() => validateExpectedDigest('short')).toThrow();
+    expect(() => validateExpectedDigest('g'.repeat(64))).toThrow();
   });
   it('rejects appended token segments and modified signatures', () => {
     process.env.JWT_ACCESS_SECRET = 'test-only-secret-'.repeat(4);
