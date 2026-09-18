@@ -33,9 +33,9 @@ jobs:
       - name: Generate Android platform scaffold
         run: flutter create --platforms=android --android-language=kotlin --project-name=karta_wallet --org=com.karta.identity --no-pub .
 
-      - name: Mark launcher as Alpha 0.3 local build
+      - name: Mark launcher as Alpha 0.5 Document Vault
         run: |
-          sed -i 's/android:label="karta_wallet"/android:label="KARTA ALPHA 0.3"/' android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="karta_wallet"/android:label="KARTA ALPHA 0.5"/' android/app/src/main/AndroidManifest.xml
           grep -n 'android:label' android/app/src/main/AndroidManifest.xml
 
       - name: Resolve dependencies
@@ -53,7 +53,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: karta-alpha-03-local-apk
+          name: karta-alpha-05-profile-documents-apk
           path: apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 14
