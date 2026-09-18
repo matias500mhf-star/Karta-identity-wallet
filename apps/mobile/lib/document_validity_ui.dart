@@ -4,10 +4,9 @@ import 'brand_theme.dart';
 import 'services/document_store.dart';
 
 String kartaDate(DateTime date) {
-  final local = date.toLocal();
-  final day = local.day.toString().padLeft(2, '0');
-  final month = local.month.toString().padLeft(2, '0');
-  return '$day/$month/${local.year}';
+  final day = date.day.toString().padLeft(2, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  return '$day/$month/${date.year}';
 }
 
 class DocumentValidityCopy {
