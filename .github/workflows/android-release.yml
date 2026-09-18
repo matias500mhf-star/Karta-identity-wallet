@@ -1,0 +1,113 @@
+name: KARTA Android Signed Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  signed-release:
+    if: startsWith(github.ref, 'refs/heads/release/')
+    runs-on: ubuntu-latest
+    env:
+      KARTA_ANDROID_KEYSTORE_B64: ${{ secrets.KARTA_ANDROID_KEYSTORE_B64 }}
+      KARTA_KEYSTORE_PASSWORD: ${{ secrets.KARTA_KEYSTORE_PASSWORD }}
+      KARTA_KEY_ALIAS: ${{ secrets.KARTA_KEY_ALIAS }}
+      KARTA_KEY_PASSWORD: ${{ secrets.KARTA_KEY_PASSWORD }}
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Verify required signing secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in KARTA_ANDROID_KEYSTORE_B64 KARTA_KEYSTORE_PASSWORD KARTA_KEY_ALIAS KARTA_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "Required GitHub Actions secret is missing: $name"
+              exit 1
+            fi
+          done
+
+      - name: Generate Android platform scaffold
+        run: flutter create --platforms=android --android-language=kotlin --project-name=karta_wallet --org=com.karta.identity --no-pub .
+
+      - name: Install native PDF and export bridge
+        run: python3 scripts/install_android.py
+
+      - name: Mark launcher as KARTA
+        shell: bash
+        run: |
+          sed -i 's/android:label="karta_wallet"/android:label="KARTA"/' android/app/src/main/AndroidManifest.xml
+          grep -n 'android:label' android/app/src/main/AndroidManifest.xml
+
+      - name: Restore signing keystore for this job only
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "$KARTA_ANDROID_KEYSTORE_B64" | base64 --decode > android/app/karta-upload.jks
+          test -s android/app/karta-upload.jks
+          chmod 600 android/app/karta-upload.jks
+
+      - name: Configure release signing
+        run: python3 scripts/configure_release_signing.py
+
+      - name: Verify signing certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          keytool -list -v \
+            -keystore android/app/karta-upload.jks \
+            -storepass "$KARTA_KEYSTORE_PASSWORD" \
+            -alias "$KARTA_KEY_ALIAS" | grep -E 'Alias name:|SHA256:'
+
+      - name: Resolve dependencies
+        run: flutter pub get
+
+      - name: Analyze Dart code
+        run: flutter analyze
+
+      - name: Run Flutter tests
+        run: flutter test
+
+      - name: Build signed release APK
+        run: flutter build apk --release
+
+      - name: Build signed release AAB
+        run: flutter build appbundle --release
+
+      - name: Record release hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum build/app/outputs/flutter-apk/app-release.apk | tee build/app-release.sha256
+          sha256sum build/app/outputs/bundle/release/app-release.aab | tee build/app-release-aab.sha256
+
+      - name: Upload signed release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: karta-0.9-rc1-signed-apk
+          path: |
+            apps/mobile/build/app/outputs/flutter-apk/app-release.apk
+            apps/mobile/build/app-release.sha256
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload signed release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: karta-0.9-rc1-signed-aab
+          path: |
+            apps/mobile/build/app/outputs/bundle/release/app-release.aab
+            apps/mobile/build/app-release-aab.sha256
+          if-no-files-found: error
+          retention-days: 14
