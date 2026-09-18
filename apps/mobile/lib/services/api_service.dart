@@ -41,6 +41,7 @@ class ApiService {
     Map<String, dynamic>? json,
     Uint8List? bytes,
     String? invite,
+    Map<String, String>? headers,
   }) async {
     final req = http.Request(method, _url(path))..followRedirects = false;
     req.headers['Accept'] = 'application/json';
@@ -48,6 +49,7 @@ class ApiService {
       req.headers['Authorization'] = 'Bearer $accessToken';
     }
     if (invite != null) req.headers['X-Karta-Invite'] = invite;
+    if (headers != null) req.headers.addAll(headers);
     if (bytes != null) {
       req.headers['Content-Type'] = 'application/octet-stream';
       req.bodyBytes = bytes;
@@ -92,6 +94,16 @@ class ApiService {
       if (response.statusCode == 409) {
         throw const ApiException(
           'Não foi possível criar a conta com estes dados.',
+        );
+      }
+      if (response.statusCode == 412) {
+        throw const ApiException(
+          'O backup online mudou noutro dispositivo. Atualize o estado antes de substituir essa versão.',
+        );
+      }
+      if (response.statusCode == 428) {
+        throw const ApiException(
+          'O servidor recusou uma substituição sem versão conhecida. Atualize o estado do backup.',
         );
       }
       if (response.statusCode == 404) {
@@ -143,11 +155,19 @@ class ApiService {
     return Map<String, dynamic>.from(jsonDecode(r.body) as Map);
   }
 
-  Future<void> upload(Uint8List bytes) async {
+  Future<void> upload(Uint8List bytes, {String? expectedDigest}) async {
     if (bytes.length > BackupCodec.maxBytes) {
       throw const ApiException('Backup demasiado grande.');
     }
-    final r = await _request('PUT', '/backups/latest', bytes: bytes);
+    final conditionalHeaders = expectedDigest == null
+        ? const {'If-None-Match': '*'}
+        : {'If-Match': '"$expectedDigest"'};
+    final r = await _request(
+      'PUT',
+      '/backups/latest',
+      bytes: bytes,
+      headers: conditionalHeaders,
+    );
     final meta = jsonDecode(r.body) as Map;
     if (meta['digest'] != await KartaQr.fingerprint(bytes) ||
         meta['size'] != bytes.length) {
