@@ -28,14 +28,17 @@ jobs:
       - name: Generate Android platform scaffold
         run: flutter create --platforms=android --android-language=kotlin --project-name=karta_wallet --org=com.karta.identity --no-pub .
 
-      - name: Install native PDF and export bridge
+      - name: Install native bridge and KARTA branding
         run: python3 scripts/install_android.py
 
-      - name: Mark launcher as KARTA RC1
+      - name: Verify KARTA launcher branding
         shell: bash
         run: |
-          sed -i 's/android:label="karta_wallet"/android:label="KARTA 0.9 RC1"/' android/app/src/main/AndroidManifest.xml
-          grep -n 'android:label' android/app/src/main/AndroidManifest.xml
+          set -euo pipefail
+          grep -n 'android:label="KARTA"' android/app/src/main/AndroidManifest.xml
+          grep -n '@drawable/karta_launcher' android/app/src/main/AndroidManifest.xml
+          test -f android/app/src/main/res/drawable/karta_launcher.xml
+          test -f android/app/src/main/res/drawable/launch_background.xml
 
       - name: Disable debug signing for release outputs
         shell: bash
@@ -78,7 +81,7 @@ jobs:
       - name: Upload unsigned release APK
         uses: actions/upload-artifact@v4
         with:
-          name: karta-0.9-rc1-unsigned-apk
+          name: karta-0.9-rc1-build13-unsigned-apk
           path: |
             apps/mobile/build/app/outputs/flutter-apk/app-release.apk
             apps/mobile/build/app-release-unsigned-apk.sha256
@@ -88,7 +91,7 @@ jobs:
       - name: Upload unsigned release AAB
         uses: actions/upload-artifact@v4
         with:
-          name: karta-0.9-rc1-unsigned-aab
+          name: karta-0.9-rc1-build13-unsigned-aab
           path: |
             apps/mobile/build/app/outputs/bundle/release/app-release.aab
             apps/mobile/build/app-release-unsigned-aab.sha256
