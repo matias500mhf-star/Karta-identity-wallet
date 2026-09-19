@@ -4,6 +4,8 @@ Candidate: `0.9.0-rc.1+14`
 
 Baseline for update preservation: signed Build 13 (`0.9.0-rc.1+13`).
 
+Current validated tooling head: `a4ef91726963359ca1163b0b9730c80c0b35fca7`.
+
 ## Purpose
 
 This gate proves two different things separately:
@@ -12,6 +14,22 @@ This gate proves two different things separately:
 2. a Build 14 APK signed with the same permanent KARTA certificate can update signed Build 13 without losing wallet data.
 
 A debug APK may be used for the clean-install functional pass. It must **not** be used as evidence of update compatibility with signed Build 13 because Android signing identities differ.
+
+## CI status for this gate
+
+At tooling head `a4ef91726963359ca1163b0b9730c80c0b35fca7`:
+
+- KARTA API CI passed;
+- release helper scripts passed Python syntax validation;
+- Flutter analyze passed;
+- full Flutter tests passed;
+- Android debug APK build passed;
+- Build 14 debug artifact upload passed;
+- external Vercel status passed.
+
+GitHub Actions artifact digest for this head:
+
+`sha256:9cd83655923ff66d0be672e3dc2a1fe480d1ca0f808c4ddc90dddbf7c0e48e52`
 
 ## A. Clean-install functional pass
 
@@ -37,7 +55,7 @@ Record device model, Android version, candidate commit, APK SHA-256 and any fail
 
 ## B. Offline signed Build 14 preparation
 
-Keep the permanent `.jks` and passwords on the owner's trusted workstation. Do not upload the key, passwords or Base64 keystore to GitHub, issues, pull requests or chat.
+Build 13 was signed offline with the permanent owner-controlled key. Keep that same model for the Build 14 update-preservation test. Do not upload the permanent `.jks`, its Base64 representation or its passwords to GitHub, issues, pull requests or chat.
 
 From the approved Build 14 commit:
 
@@ -56,7 +74,7 @@ flutter test
 flutter build apk --release
 ```
 
-Do not record the three secret environment-variable values in shell history, screenshots or release notes.
+Use a trusted shell/session and avoid storing the three secret environment-variable values in screenshots, release notes or logs.
 
 ## C. Verify the signed artifact before installation
 
