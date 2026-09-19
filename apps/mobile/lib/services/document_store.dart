@@ -88,13 +88,22 @@ class VaultDocument {
 }
 
 class DocumentStore {
+  DocumentStore({this.directory});
+
   static const _indexKey = 'karta.document_vault.index.v1';
   static const _keyKey = 'karta.document_vault.key.v1';
+  static const _pendingDeleteKey = 'karta.document_vault.pending_delete.v1';
 
+  final Directory? directory;
   final FlutterSecureStorage _secure = const FlutterSecureStorage();
   final AesGcm _cipher = AesGcm.with256bits();
 
   Future<List<VaultDocument>> list() async {
+    await _recoverPendingDelete();
+    return _readIndex();
+  }
+
+  Future<List<VaultDocument>> _readIndex() async {
     final raw = await _secure.read(key: _indexKey);
     if (raw == null || raw.isEmpty) return [];
     try {
@@ -183,14 +192,35 @@ class DocumentStore {
   }
 
   Future<void> remove(VaultDocument item) async {
-    final dir = await _vaultDir();
-    for (final name in [item.frontFile, item.backFile, item.attachmentFile]) {
-      if (name == null) continue;
-      final file = File('${dir.path}/$name');
-      if (await file.exists()) await file.delete();
+    await _recoverPendingDelete();
+    final items = await _readIndex();
+    if (!items.any((document) => document.id == item.id)) return;
+
+    final files = [item.frontFile, item.backFile, item.attachmentFile]
+        .whereType<String>()
+        .where(_safeFileName)
+        .toSet()
+        .toList();
+    await _secure.write(
+      key: _pendingDeleteKey,
+      value: jsonEncode({'id': item.id, 'files': files}),
+    );
+
+    items.removeWhere((document) => document.id == item.id);
+    try {
+      await _writeIndex(items);
+    } catch (_) {
+      await _secure.delete(key: _pendingDeleteKey);
+      rethrow;
     }
-    final items = await list()..removeWhere((e) => e.id == item.id);
-    await _writeIndex(items);
+
+    try {
+      await _deleteFiles(files);
+      await _secure.delete(key: _pendingDeleteKey);
+    } catch (_) {
+      // The index deletion is already committed. Keep the marker so a later
+      // list/open cycle can finish deleting any encrypted orphan files.
+    }
   }
 
   Future<void> clear() async {
@@ -198,6 +228,7 @@ class DocumentStore {
     if (await dir.exists()) await dir.delete(recursive: true);
     await _secure.delete(key: _indexKey);
     await _secure.delete(key: _keyKey);
+    await _secure.delete(key: _pendingDeleteKey);
   }
 
   Future<String> _writeEncrypted(String fileName, Uint8List bytes) async {
@@ -225,11 +256,68 @@ class DocumentStore {
   }
 
   Future<Directory> _vaultDir() async {
-    final root = await getApplicationSupportDirectory();
+    final root = directory ?? await getApplicationSupportDirectory();
     final dir = Directory('${root.path}/karta_vault');
     if (!await dir.exists()) await dir.create(recursive: true);
     return dir;
   }
+
+  Future<void> _deleteFiles(Iterable<String> fileNames) async {
+    final dir = await _vaultDir();
+    for (final name in fileNames) {
+      if (!_safeFileName(name)) continue;
+      final file = File('${dir.path}/$name');
+      if (await file.exists()) await file.delete();
+    }
+  }
+
+  Future<void> _recoverPendingDelete() async {
+    final pendingRaw = await _secure.read(key: _pendingDeleteKey);
+    if (pendingRaw == null || pendingRaw.isEmpty) return;
+    try {
+      final pending = jsonDecode(pendingRaw);
+      if (pending is! Map) {
+        await _secure.delete(key: _pendingDeleteKey);
+        return;
+      }
+      final id = pending['id']?.toString() ?? '';
+      final rawFiles = pending['files'];
+      if (id.isEmpty || rawFiles is! List) {
+        await _secure.delete(key: _pendingDeleteKey);
+        return;
+      }
+      final files = rawFiles
+          .whereType<String>()
+          .where(_safeFileName)
+          .toSet()
+          .toList();
+      if (files.length != rawFiles.length) {
+        await _secure.delete(key: _pendingDeleteKey);
+        return;
+      }
+
+      final indexRaw = await _secure.read(key: _indexKey);
+      if (indexRaw == null || indexRaw.isEmpty) return;
+      final decoded = jsonDecode(indexRaw);
+      if (decoded is! List) return;
+      final stillIndexed = decoded.whereType<Map>().any(
+            (document) => document['id']?.toString() == id,
+          );
+      if (stillIndexed) {
+        // The app stopped before the index commit; no files were deleted yet.
+        await _secure.delete(key: _pendingDeleteKey);
+        return;
+      }
+      await _deleteFiles(files);
+      await _secure.delete(key: _pendingDeleteKey);
+    } catch (_) {
+      // Keep a valid-looking pending marker for a later safe retry. Never
+      // delete files when the index cannot be parsed confidently.
+    }
+  }
+
+  static bool _safeFileName(String name) =>
+      RegExp(r'^[a-zA-Z0-9_-]+\.karta$').hasMatch(name);
 
   Future<void> _writeIndex(List<VaultDocument> items) => _secure.write(
         key: _indexKey,
