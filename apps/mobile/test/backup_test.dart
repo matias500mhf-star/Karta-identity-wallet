@@ -10,7 +10,7 @@ import 'package:karta_wallet/services/backup_store.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
-    'backup authenticates password and restores only into an empty wallet',
+    'backup authenticates password and restores mixed document metadata only into an empty wallet',
     () async {
       final root = await Directory.systemTemp.createTemp('karta-backup-test');
       addTearDown(() => root.delete(recursive: true));
@@ -41,6 +41,12 @@ void main() {
             'issuedAt': '2025-02-10T00:00:00.000Z',
             'expiresAt': '2030-02-10T00:00:00.000Z',
             'attachmentFile': '123-attachment.karta',
+          },
+          {
+            'id': '124',
+            'type': 'Certidão',
+            'title': 'Documento legado',
+            'createdAt': '2026-01-15T00:00:00.000Z',
           },
         ]),
         'karta.wallet_created': 'true',
@@ -76,11 +82,16 @@ void main() {
       final restoredIndex = jsonDecode(
         (await storage.read(key: 'karta.document_vault.index.v1'))!,
       ) as List;
-      final restoredDocument = Map<String, dynamic>.from(
-        restoredIndex.single as Map,
+      expect(restoredIndex, hasLength(2));
+      final validityAware = Map<String, dynamic>.from(
+        restoredIndex.first as Map,
       );
-      expect(restoredDocument['issuedAt'], '2025-02-10T00:00:00.000Z');
-      expect(restoredDocument['expiresAt'], '2030-02-10T00:00:00.000Z');
+      final legacy = Map<String, dynamic>.from(restoredIndex.last as Map);
+      expect(validityAware['issuedAt'], '2025-02-10T00:00:00.000Z');
+      expect(validityAware['expiresAt'], '2030-02-10T00:00:00.000Z');
+      expect(legacy['title'], 'Documento legado');
+      expect(legacy.containsKey('issuedAt'), isFalse);
+      expect(legacy.containsKey('expiresAt'), isFalse);
       expect(await storage.read(key: 'karta.biometric.enabled'), isNull);
       expect(await storage.read(key: 'karta.restore.pending'), isNull);
     },
