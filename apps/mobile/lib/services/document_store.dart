@@ -97,6 +97,7 @@ class DocumentStore {
   final Directory? directory;
   final FlutterSecureStorage _secure = const FlutterSecureStorage();
   final AesGcm _cipher = AesGcm.with256bits();
+  bool _indexCorrupted = false;
 
   Future<List<VaultDocument>> list() async {
     await _recoverPendingDelete();
@@ -105,21 +106,35 @@ class DocumentStore {
 
   Future<List<VaultDocument>> _readIndex() async {
     final raw = await _secure.read(key: _indexKey);
-    if (raw == null || raw.isEmpty) return [];
+    if (raw == null || raw.isEmpty) {
+      _indexCorrupted = false;
+      return [];
+    }
     try {
       final decoded = jsonDecode(raw);
-      if (decoded is! List) return [];
+      if (decoded is! List || decoded.any((entry) => entry is! Map)) {
+        _indexCorrupted = true;
+        return [];
+      }
       final items = decoded
-          .whereType<Map>()
-          .map((e) => VaultDocument.fromJson(Map<String, dynamic>.from(e)))
-          .where((e) => e.id.isNotEmpty)
+          .map((e) => VaultDocument.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList();
+      if (items.any((item) => item.id.isEmpty)) {
+        _indexCorrupted = true;
+        return [];
+      }
       items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      _indexCorrupted = false;
       return items;
     } catch (_) {
+      _indexCorrupted = true;
       return [];
     }
   }
+
+  Never _throwCorruptIndex() => throw StateError(
+        'O índice seguro de documentos está inválido. Não foram alterados dados; restaure um backup válido antes de adicionar ou apagar documentos.',
+      );
 
   Future<VaultDocument> add({
     required String type,
@@ -146,6 +161,10 @@ class DocumentStore {
         normalizedExpiresAt.isBefore(normalizedIssuedAt)) {
       throw ArgumentError('Expiry date cannot be before issue date.');
     }
+
+    final items = await list();
+    if (_indexCorrupted) _throwCorruptIndex();
+
     final now = DateTime.now().toUtc();
     final id = now.microsecondsSinceEpoch.toString();
     final front = frontBytes == null
@@ -171,7 +190,6 @@ class DocumentStore {
       attachmentName: attachmentName,
       attachmentMime: attachmentMime,
     );
-    final items = await list();
     items.insert(0, item);
     await _writeIndex(items);
     return item;
@@ -194,6 +212,7 @@ class DocumentStore {
   Future<void> remove(VaultDocument item) async {
     await _recoverPendingDelete();
     final items = await _readIndex();
+    if (_indexCorrupted) _throwCorruptIndex();
     if (!items.any((document) => document.id == item.id)) return;
 
     final files = [item.frontFile, item.backFile, item.attachmentFile]
@@ -229,6 +248,7 @@ class DocumentStore {
     await _secure.delete(key: _indexKey);
     await _secure.delete(key: _keyKey);
     await _secure.delete(key: _pendingDeleteKey);
+    _indexCorrupted = false;
   }
 
   Future<String> _writeEncrypted(String fileName, Uint8List bytes) async {
