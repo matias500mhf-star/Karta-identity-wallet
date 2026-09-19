@@ -30,6 +30,9 @@ jobs:
       - name: Show Flutter environment
         run: flutter --version
 
+      - name: Validate release helper scripts
+        run: python3 -m py_compile scripts/install_android.py scripts/configure_release_signing.py scripts/verify_release_artifact.py
+
       - name: Generate Android platform scaffold
         run: flutter create --platforms=android --android-language=kotlin --project-name=karta_wallet --org=com.karta.identity --no-pub .
 
