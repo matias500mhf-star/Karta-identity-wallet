@@ -3,6 +3,7 @@ import 'premium_widgets.dart';
 import 'services/qr_payload.dart';
 import 'pdf_viewer_page.dart';
 import 'brand_theme.dart';
+import 'document_validity_ui.dart';
 
 import 'dart:typed_data';
 
@@ -155,6 +156,7 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
               (item) => Card(
                 child: ListTile(
                   onTap: () => _open(item),
+                  isThreeLine: true,
                   leading: Icon(
                     item.type == 'Passaporte'
                         ? Icons.menu_book_outlined
@@ -164,7 +166,17 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
                     item.title,
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
-                  subtitle: Text('${item.type} · cópia local não verificada'),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${item.type} · cópia local não verificada'),
+                        const SizedBox(height: 8),
+                        DocumentValidityBadge(document: item, compact: true),
+                      ],
+                    ),
+                  ),
                   trailing: const Icon(Icons.chevron_right),
                 ),
               ),
@@ -195,6 +207,8 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
   final ImagePicker picker = ImagePicker();
   final title = TextEditingController();
   String type = types.first;
+  DateTime? issuedAt;
+  DateTime? expiresAt;
   Uint8List? front;
   Uint8List? back;
   Uint8List? attachment;
@@ -306,11 +320,23 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
       );
       return;
     }
+    if (issuedAt != null &&
+        expiresAt != null &&
+        expiresAt!.isBefore(issuedAt!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('A data de validade não pode ser anterior à emissão.'),
+        ),
+      );
+      return;
+    }
     setState(() => busy = true);
     try {
       await widget.store.add(
         type: type,
         title: title.text.trim().isEmpty ? type : title.text.trim(),
+        issuedAt: issuedAt,
+        expiresAt: expiresAt,
         frontBytes: front,
         backBytes: back,
         attachmentBytes: attachment,
@@ -365,6 +391,22 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
                 labelText: 'Nome opcional',
                 hintText: 'Ex.: Meu BI',
               ),
+            ),
+            const SizedBox(height: 16),
+            DocumentDateField(
+              label: 'Data de emissão',
+              value: issuedAt,
+              lastDate: DateTime.now(),
+              helperText: 'Opcional. Use a data indicada no documento.',
+              onChanged: (value) => setState(() => issuedAt = value),
+            ),
+            const SizedBox(height: 12),
+            DocumentDateField(
+              label: 'Data de validade',
+              value: expiresAt,
+              firstDate: DateTime(1900),
+              helperText: 'Opcional. A KARTA usa esta data para avisos de validade.',
+              onChanged: (value) => setState(() => expiresAt = value),
             ),
             const SizedBox(height: 22),
             _sideCard(
@@ -740,6 +782,34 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                     fontWeight: FontWeight.w900,
                   ),
                 ),
+                const SizedBox(height: 12),
+                DocumentValidityBadge(document: widget.item),
+                if (widget.item.issuedAt != null || widget.item.expiresAt != null) ...[
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        children: [
+                          if (widget.item.issuedAt != null)
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.event_available_outlined),
+                              title: const Text('Data de emissão'),
+                              subtitle: Text(kartaDate(widget.item.issuedAt!)),
+                            ),
+                          if (widget.item.expiresAt != null)
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.event_busy_outlined),
+                              title: const Text('Data de validade'),
+                              subtitle: Text(kartaDate(widget.item.expiresAt!)),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 18),
                 if (front != null) ...[
                   const Text(

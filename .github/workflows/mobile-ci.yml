@@ -30,6 +30,9 @@ jobs:
       - name: Show Flutter environment
         run: flutter --version
 
+      - name: Validate release helper scripts
+        run: python3 -m py_compile scripts/install_android.py scripts/configure_release_signing.py scripts/verify_release_artifact.py
+
       - name: Generate Android platform scaffold
         run: flutter create --platforms=android --android-language=kotlin --project-name=karta_wallet --org=com.karta.identity --no-pub .
 
@@ -57,10 +60,10 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
 
-      - name: Upload RC1 build 13 debug APK
+      - name: Upload Phase 1 build 14 debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: karta-0.9-rc1-build13-debug-apk
+          name: karta-0.9-rc1-build14-phase1-debug-apk
           path: apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 14

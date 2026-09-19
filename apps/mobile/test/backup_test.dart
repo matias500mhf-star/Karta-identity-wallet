@@ -10,7 +10,7 @@ import 'package:karta_wallet/services/backup_store.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test(
-    'backup authenticates password and restores only into an empty wallet',
+    'backup authenticates password and restores mixed document metadata only into an empty wallet',
     () async {
       final root = await Directory.systemTemp.createTemp('karta-backup-test');
       addTearDown(() => root.delete(recursive: true));
@@ -33,7 +33,21 @@ void main() {
       FlutterSecureStorage.setMockInitialValues({
         'karta.document_vault.key.v1': base64Encode(key),
         'karta.document_vault.index.v1': jsonEncode([
-          {'id': '123', 'attachmentFile': '123-attachment.karta'},
+          {
+            'id': '123',
+            'type': 'Passaporte',
+            'title': 'Passaporte',
+            'createdAt': '2026-09-18T00:00:00.000Z',
+            'issuedAt': '2025-02-10T00:00:00.000Z',
+            'expiresAt': '2030-02-10T00:00:00.000Z',
+            'attachmentFile': '123-attachment.karta',
+          },
+          {
+            'id': '124',
+            'type': 'Certidão',
+            'title': 'Documento legado',
+            'createdAt': '2026-01-15T00:00:00.000Z',
+          },
         ]),
         'karta.wallet_created': 'true',
         'karta.pin': '123456',
@@ -65,22 +79,38 @@ void main() {
         await storage.read(key: 'karta.profile.v1'),
         contains('Pessoa de teste'),
       );
+      final restoredIndex = jsonDecode(
+        (await storage.read(key: 'karta.document_vault.index.v1'))!,
+      ) as List;
+      expect(restoredIndex, hasLength(2));
+      final validityAware = Map<String, dynamic>.from(
+        restoredIndex.first as Map,
+      );
+      final legacy = Map<String, dynamic>.from(restoredIndex.last as Map);
+      expect(validityAware['issuedAt'], '2025-02-10T00:00:00.000Z');
+      expect(validityAware['expiresAt'], '2030-02-10T00:00:00.000Z');
+      expect(legacy['title'], 'Documento legado');
+      expect(legacy.containsKey('issuedAt'), isFalse);
+      expect(legacy.containsKey('expiresAt'), isFalse);
       expect(await storage.read(key: 'karta.biometric.enabled'), isNull);
       expect(await storage.read(key: 'karta.restore.pending'), isNull);
     },
     timeout: const Timeout(Duration(minutes: 3)),
   );
 
-  test('interrupted restore rolls back staging data without marking a wallet complete', () async {
-    final root = await Directory.systemTemp.createTemp('karta-restore-test');
-    addTearDown(() => root.delete(recursive: true));
-    await Directory('${root.path}/karta_vault').create();
-    FlutterSecureStorage.setMockInitialValues({
-      'karta.restore.pending': 'true',
-      'karta.pin': '123456',
-    });
-    await BackupStore(directory: root).recoverInterruptedRestore();
-    expect(await const FlutterSecureStorage().readAll(), isEmpty);
-    expect(await Directory('${root.path}/karta_vault').exists(), isFalse);
-  });
+  test(
+    'interrupted restore rolls back staging data without marking a wallet complete',
+    () async {
+      final root = await Directory.systemTemp.createTemp('karta-restore-test');
+      addTearDown(() => root.delete(recursive: true));
+      await Directory('${root.path}/karta_vault').create();
+      FlutterSecureStorage.setMockInitialValues({
+        'karta.restore.pending': 'true',
+        'karta.pin': '123456',
+      });
+      await BackupStore(directory: root).recoverInterruptedRestore();
+      expect(await const FlutterSecureStorage().readAll(), isEmpty);
+      expect(await Directory('${root.path}/karta_vault').exists(), isFalse);
+    },
+  );
 }
