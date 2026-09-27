@@ -1,0 +1,48 @@
+name: KARTA Security Baseline
+
+on:
+  push:
+    branches: [main, 'feature/**', 'fix/**', 'security/**']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  repository-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reject tracked secrets and signing material
+        shell: bash
+        run: |
+          set -euo pipefail
+          bad="$(git ls-files | grep -Ei '(^|/)(\.env($|\.)|\.dev\.vars($|\.)|credentials?/|secrets?/|private/)|(^|/)(google-services\.json|GoogleService-Info\.plist|key\.properties|service-account[^/]*\.json)$|\.(pem|key|p12|pfx|jks|keystore|mobileprovision|sqlite3?|db|dump|bak|backup)$'             | grep -Ev '(^|/)\.env(\.[^/]+)?\.example$' || true)"
+          if [ -n "$bad" ]; then
+            echo "::error title=Sensitive files tracked::Remove sensitive files from Git and use protected secrets."
+            printf '%s\n' "$bad"
+            exit 1
+          fi
+
+      - name: Reject high-confidence secret material
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git grep -nE -- '-----BEGIN ([A-Z0-9 ]+ )?PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{50,}|AKIA[0-9A-Z]{16}' -- .             ':!*.md' ':!*.example'; then
+            echo "::error title=Possible secret committed::Rotate the credential and remove it from repository history."
+            exit 1
+          fi
+
+      - name: Verify KARTA storage security contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q "flutter_secure_storage" apps/mobile/pubspec.yaml
+          grep -q "Pbkdf2" apps/mobile/lib/services/session_store.dart
+          grep -q "aes-256-gcm" apps/api/src/documents/document-crypto.service.ts
+          ! grep -q "write(key: _legacyPinKey" apps/mobile/lib/services/session_store.dart
