@@ -25,8 +25,6 @@ void main() {
     expect(restored.reference, credential.reference);
     expect(restored.createdAt, createdAt);
   });
-}
-
 
   test('PIN verifier is deterministic for one salt and changes with another', () async {
     final a = await derivePinVerifier(
@@ -52,3 +50,4 @@ void main() {
     expect(constantTimeStringEquals('abc123', 'abc124'), false);
     expect(constantTimeStringEquals('short', 'longer'), false);
   });
+}
