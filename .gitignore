@@ -14,10 +14,30 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env.*.example
+.dev.vars
+.dev.vars.*
 *.pem
 *.key
 *.p12
+*.pfx
 *.jks
+*.keystore
+*.mobileprovision
+*.provisionprofile
+*.der
+credentials/
+secrets/
+private/
+
+# Android/iOS signing and service configuration
+android/key.properties
+android/app/*.jks
+android/app/*.keystore
+ios/Runner/*.mobileprovision
+GoogleService-Info.plist
+google-services.json
+service-account*.json
 
 # IDE
 .idea/
@@ -31,10 +51,16 @@ Thumbs.db
 # Logs
 *.log
 
-# Local databases / uploads
+# Local databases / uploads / private exports
 *.sqlite
 *.sqlite3
+*.db
+*.dump
+*.bak
+*.backup
 uploads/
+backups/
+exports/
 
 # Generated files
 *.g.dart
