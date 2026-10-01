@@ -2,9 +2,9 @@ name: KARTA API CI
 
 on:
   push:
-    branches: [main, 'feature/**', 'release/**']
+    branches: [main, 'feature/**', 'security/**', 'release/**']
   pull_request:
-    branches: [main, 'release/**']
+    branches: [main, 'feature/**', 'security/**', 'release/**']
 
 jobs:
   api:

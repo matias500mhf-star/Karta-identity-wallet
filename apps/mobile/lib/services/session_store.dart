@@ -5,6 +5,15 @@ import 'package:cryptography/cryptography.dart';
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+bool constantTimeStringEquals(String a, String b) {
+  if (a.length != b.length) return false;
+  var difference = 0;
+  for (var i = 0; i < a.length; i++) {
+    difference |= a.codeUnitAt(i) ^ b.codeUnitAt(i);
+  }
+  return difference == 0;
+}
+
 class SessionStore {
   static const _walletCreatedKey = 'karta.wallet_created';
   static const _pinKey = 'karta.pin';
@@ -67,8 +76,10 @@ class SessionStore {
       bool valid = false;
       if (record == null) {
         final old = await _storage.read(key: _pinKey);
-        valid = old != null && old == pin;
-        if (valid) { await _savePin(pin); }
+        valid = old != null && constantTimeStringEquals(pin, old);
+        if (valid) {
+          await _savePin(pin);
+        }
       } else {
         final data = jsonDecode(record) as Map;
         final hash = await _kdf.deriveKey(
