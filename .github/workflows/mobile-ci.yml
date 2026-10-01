@@ -2,12 +2,12 @@ name: KARTA Mobile CI
 
 on:
   push:
-    branches: [main, 'feature/**', 'fix/**', 'release/**']
+    branches: [main, 'feature/**', 'fix/**', 'security/**', 'release/**']
     paths:
       - 'apps/mobile/**'
       - '.github/workflows/mobile-ci.yml'
   pull_request:
-    branches: [main, 'release/**']
+    branches: [main, 'feature/**', 'security/**', 'release/**']
     paths:
       - 'apps/mobile/**'
       - '.github/workflows/mobile-ci.yml'
