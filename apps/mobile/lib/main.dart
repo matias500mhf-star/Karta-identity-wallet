@@ -560,38 +560,91 @@ class _UnlockPageState extends State<UnlockPage> {
 }
 
 class WalletPage extends StatefulWidget {
-  const WalletPage({super.key, required this.store});
+  const WalletPage({
+    super.key,
+    required this.store,
+    this.credentialStore,
+  });
   final SessionStore store;
+  final CredentialStore? credentialStore;
 
   @override
   State<WalletPage> createState() => _WalletPageState();
 }
 
 class _WalletPageState extends State<WalletPage> {
-  final CredentialStore credentialStore = CredentialStore();
+  late final CredentialStore credentialStore;
   final DocumentStore documentStore = DocumentStore();
   int index = 0;
   String walletName = 'A minha KARTA';
   List<LocalCredential> credentials = [];
   bool loading = true;
+  String? walletLoadError;
+  String? credentialRecoveryError;
 
   @override
   void initState() {
     super.initState();
+    credentialStore = widget.credentialStore ?? CredentialStore();
     _load();
   }
 
   Future<void> _load() async {
-    final name = await widget.store.walletName();
-    final items = await credentialStore.list();
-    if (!mounted) {
+    if (mounted) {
+      setState(() {
+        loading = true;
+        walletLoadError = null;
+        credentialRecoveryError = null;
+      });
+    }
+
+    String name;
+    try {
+      name = await widget.store.walletName();
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        walletLoadError =
+            'Não foi possível carregar os dados da carteira com segurança. Tente novamente.';
+        loading = false;
+      });
       return;
     }
-    setState(() {
-      walletName = name;
-      credentials = items;
-      loading = false;
-    });
+
+    try {
+      final items = await credentialStore.list();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        walletName = name;
+        credentials = items;
+        loading = false;
+      });
+    } on StateError catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        walletName = name;
+        credentials = [];
+        credentialRecoveryError =
+            'O índice seguro das credenciais está inválido. Os dados foram preservados. Não adicione nem remova credenciais até recuperar a partir de um backup anterior válido.';
+        loading = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        walletName = name;
+        walletLoadError =
+            'Não foi possível carregar as credenciais. Nenhum registo foi alterado.';
+        loading = false;
+      });
+    }
   }
 
   Future<void> _addCredential() async {
@@ -654,6 +707,44 @@ class _WalletPageState extends State<WalletPage> {
             label: 'Definições',
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _walletStatusCard({
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 26),
+        child: Column(
+          children: [
+            Icon(icon, size: 38, color: HmatiasBrand.blue),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: HmatiasBrand.muted,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonalIcon(
+              onPressed: _load,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -736,6 +827,18 @@ class _WalletPageState extends State<WalletPage> {
               padding: EdgeInsets.all(28),
               child: Center(child: CircularProgressIndicator()),
             )
+          else if (walletLoadError != null)
+            _walletStatusCard(
+              icon: Icons.sync_problem_rounded,
+              title: 'Não foi possível carregar a carteira',
+              message: walletLoadError!,
+            )
+          else if (credentialRecoveryError != null)
+            _walletStatusCard(
+              icon: Icons.warning_amber_rounded,
+              title: 'As credenciais precisam de recuperação',
+              message: credentialRecoveryError!,
+            )
           else if (credentials.isEmpty)
             const KartaEmptyState(
               icon: Icons.badge_outlined,
@@ -746,7 +849,12 @@ class _WalletPageState extends State<WalletPage> {
             ...credentials.map(_credentialTile),
           const SizedBox(height: 18),
           FilledButton.icon(
-            onPressed: _addCredential,
+            onPressed:
+                loading ||
+                    walletLoadError != null ||
+                    credentialRecoveryError != null
+                ? null
+                : _addCredential,
             icon: const Icon(Icons.add_card_outlined),
             label: const Text('Adicionar credencial local'),
           ),
@@ -977,15 +1085,39 @@ class _AddCredentialPageState extends State<AddCredentialPage> {
       return;
     }
     setState(() => busy = true);
-    final credential = await widget.store.add(
-      type: type,
-      issuer: issuer.text,
-      reference: reference.text,
-    );
-    if (!mounted) {
-      return;
+    try {
+      final credential = await widget.store.add(
+        type: type,
+        issuer: issuer.text,
+        reference: reference.text,
+      );
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop(credential);
+    } on StateError catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'As credenciais precisam de recuperação. Nenhum registo foi alterado.',
+            ),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Não foi possível guardar a credencial. Tente novamente.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => busy = false);
+      }
     }
-    Navigator.of(context).pop(credential);
   }
 
   @override
@@ -1082,9 +1214,21 @@ class CredentialDetailsPage extends StatelessWidget {
           ),
           FilledButton.tonalIcon(
             onPressed: () async {
-              await store.remove(credential.id);
-              if (context.mounted) {
-                Navigator.of(context).pop(true);
+              try {
+                await store.remove(credential.id);
+                if (context.mounted) {
+                  Navigator.of(context).pop(true);
+                }
+              } catch (_) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Não foi possível remover a credencial. Nenhum registo foi alterado.',
+                      ),
+                    ),
+                  );
+                }
               }
             },
             icon: const Icon(Icons.delete_outline),
