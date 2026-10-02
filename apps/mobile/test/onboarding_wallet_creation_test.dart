@@ -51,11 +51,16 @@ void main() {
         MaterialApp(home: WelcomePage(store: SessionStore())),
       );
 
-      expect(find.text('KARTA Alpha 0.9 · HMATIAS'), findsOneWidget);
       expect(
         find.text('Credenciais locais sob o seu controlo'),
         findsOneWidget,
       );
+      await tester.scrollUntilVisible(
+        find.text('KARTA Alpha 0.9 · HMATIAS'),
+        500,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('KARTA Alpha 0.9 · HMATIAS'), findsOneWidget);
       expect(find.textContaining('credenciais de teste'), findsNothing);
       expect(
         find.text('Compreendo como a KARTA funciona nesta versão.'),
