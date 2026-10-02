@@ -81,7 +81,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       const SizedBox(height: 20),
                       const Text('O meu perfil', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
                       const SizedBox(height: 12),
-                      const Text('Dados declarados por si, guardados neste dispositivo. Este perfil não constitui uma identidade verificada. Use dados fictícios nesta Alpha.'),
+                      const Text('Dados declarados por si, guardados neste dispositivo. Este perfil não constitui uma identidade verificada.'),
                       const SizedBox(height: 24),
                       TextFormField(
                         controller: _name,
