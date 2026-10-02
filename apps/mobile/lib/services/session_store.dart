@@ -17,12 +17,27 @@ bool constantTimeStringEquals(String a, String b) {
 class SessionStore {
   static const _walletCreatedKey = 'karta.wallet_created';
   static const _pinKey = 'karta.pin';
+  static const _pinV2Key = 'karta.pin.v2';
   static const _nameKey = 'karta.wallet_name';
+  static const _walletCreatePendingKey = 'karta.wallet_create.pending';
 
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
-  Future<bool> walletCreated() async =>
-      (await _storage.read(key: _walletCreatedKey)) == 'true';
+  Future<bool> walletCreated() async {
+    await recoverInterruptedWalletCreation();
+    return (await _storage.read(key: _walletCreatedKey)) == 'true';
+  }
+
+  Future<void> recoverInterruptedWalletCreation() async {
+    if (await _storage.read(key: _walletCreatePendingKey) != 'true') {
+      return;
+    }
+    if (await _storage.read(key: _walletCreatedKey) == 'true') {
+      await _storage.delete(key: _walletCreatePendingKey);
+      return;
+    }
+    await _clearIncompleteWalletCreation();
+  }
 
   Future<void> createWallet({
     required String pin,
@@ -31,9 +46,34 @@ class SessionStore {
     if (!RegExp(r'^\d{6}$').hasMatch(pin)) {
       throw ArgumentError('PIN inválido.');
     }
-    await _savePin(pin);
-    await _storage.write(key: _nameKey, value: name);
-    await _storage.write(key: _walletCreatedKey, value: 'true');
+    if (await _storage.read(key: _walletCreatedKey) == 'true') {
+      throw StateError('Já existe uma carteira neste dispositivo.');
+    }
+
+    await recoverInterruptedWalletCreation();
+    await _storage.write(key: _walletCreatePendingKey, value: 'true');
+    try {
+      await _savePin(pin);
+      await _storage.write(key: _nameKey, value: name);
+      await _storage.write(key: _walletCreatedKey, value: 'true');
+      await _storage.delete(key: _walletCreatePendingKey);
+    } catch (error, stackTrace) {
+      try {
+        await _clearIncompleteWalletCreation();
+      } catch (_) {
+        // Keep the original failure. The pending marker, if it could not be
+        // removed, will trigger another safe cleanup on the next startup.
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
+  Future<void> _clearIncompleteWalletCreation() async {
+    await _storage.delete(key: _walletCreatedKey);
+    await _storage.delete(key: _nameKey);
+    await _storage.delete(key: _pinV2Key);
+    await _storage.delete(key: _pinKey);
+    await _storage.delete(key: _walletCreatePendingKey);
   }
 
   static bool _checking = false;
@@ -50,7 +90,7 @@ class SessionStore {
       nonce: salt,
     );
     await _storage.write(
-      key: 'karta.pin.v2',
+      key: _pinV2Key,
       value: jsonEncode({
         'salt': base64Encode(salt),
         'hash': base64Encode(await hash.extractBytes()),
@@ -72,7 +112,7 @@ class SessionStore {
       if (now < until) {
         throw StateError('Aguarde antes de tentar novamente.');
       }
-      final record = await _storage.read(key: 'karta.pin.v2');
+      final record = await _storage.read(key: _pinV2Key);
       bool valid = false;
       if (record == null) {
         final old = await _storage.read(key: _pinKey);
