@@ -27,7 +27,16 @@ void main() {
           home: Scaffold(body: DocumentVaultPage(store: store)),
         ),
       );
-      await tester.pumpAndSettle();
+      // Do not use pumpAndSettle here: CircularProgressIndicator is intentionally
+      // present while the async secure-storage read is in flight, so a global
+      // settle can wait on an indeterminate animation. Pump a bounded number
+      // of frames and then assert the recovery state explicitly.
+      for (var i = 0;
+          i < 40 &&
+              find.text('O cofre precisa de recuperação').evaluate().isEmpty;
+          i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
 
       expect(store.hasIndexCorruption, isTrue);
       expect(find.text('O cofre precisa de recuperação'), findsOneWidget);
