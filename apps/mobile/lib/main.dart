@@ -343,7 +343,7 @@ class _CreatePinPageState extends State<CreatePinPage> {
     } catch (_) {
       if (mounted) {
         _error(
-          'Não foi possível criar a carteira com segurança. Nenhum PIN foi confirmado; tente novamente.',
+          'Não foi possível concluir a criação da carteira. A KARTA não foi aberta; tente novamente.',
         );
       }
     } finally {
