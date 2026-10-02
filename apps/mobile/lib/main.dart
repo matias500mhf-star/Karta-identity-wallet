@@ -178,7 +178,7 @@ class _WelcomePageState extends State<WelcomePage> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'Carteira local para credenciais de teste e cópias digitais cifradas de documentos.',
+              'Carteira local para credenciais e cópias digitais cifradas de documentos. Os registos são criados por si e não são verificados por entidades emissoras.',
               style: TextStyle(
                 color: HmatiasBrand.muted,
                 fontSize: 17,
@@ -192,7 +192,7 @@ class _WelcomePageState extends State<WelcomePage> {
             ),
             const _Feature(
               icon: Icons.badge_outlined,
-              text: 'Credenciais locais de teste',
+              text: 'Credenciais locais sob o seu controlo',
             ),
             const _Feature(
               icon: Icons.document_scanner_outlined,
@@ -203,7 +203,7 @@ class _WelcomePageState extends State<WelcomePage> {
               child: CheckboxListTile(
                 value: accepted,
                 onChanged: (v) => setState(() => accepted = v ?? false),
-                title: const Text('Compreendo que esta é uma versão Alpha.'),
+                title: const Text('Compreendo como a KARTA funciona nesta versão.'),
                 subtitle: const Text(
                   'As cópias guardadas não substituem documentos oficiais nem credenciais verificadas.',
                 ),
@@ -330,15 +330,27 @@ class _CreatePinPageState extends State<CreatePinPage> {
       return;
     }
     setState(() => busy = true);
-    await widget.store.createWallet(pin: value);
-    SessionSecurity.unlock();
-    if (!mounted) {
-      return;
+    try {
+      await widget.store.createWallet(pin: value);
+      SessionSecurity.unlock();
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => WalletPage(store: widget.store)),
+        (_) => false,
+      );
+    } catch (_) {
+      if (mounted) {
+        _error(
+          'Não foi possível concluir a criação da carteira. A KARTA não foi aberta; tente novamente.',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => busy = false);
+      }
     }
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => WalletPage(store: widget.store)),
-      (_) => false,
-    );
   }
 
   void _error(String message) =>
@@ -746,7 +758,7 @@ class _WalletPageState extends State<WalletPage> {
           ),
           const SizedBox(height: 10),
           const Text(
-            'Credenciais e documentos desta Alpha são locais e não representam validação por uma entidade emissora.',
+            'Credenciais e documentos guardados na KARTA são locais e não representam validação por uma entidade emissora.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: HmatiasBrand.muted,
@@ -855,7 +867,7 @@ class _WalletPageState extends State<WalletPage> {
           child: ListTile(
             leading: Icon(Icons.cloud_off_outlined),
             title: Text('Modo local'),
-            subtitle: Text('A Alpha funciona sem conta online'),
+            subtitle: Text('A KARTA funciona sem conta online'),
           ),
         ),
         const Card(
@@ -984,7 +996,7 @@ class _AddCredentialPageState extends State<AddCredentialPage> {
         padding: const EdgeInsets.all(24),
         children: [
           const Text(
-            'Registo local de teste',
+            'Credencial local',
             style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900),
           ),
           const SizedBox(height: 10),
