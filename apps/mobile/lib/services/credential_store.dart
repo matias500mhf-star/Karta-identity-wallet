@@ -48,17 +48,25 @@ class CredentialStore {
 
     try {
       final decoded = jsonDecode(raw);
-      if (decoded is! List) return [];
-      return decoded
-          .whereType<Map>()
-          .map((item) => LocalCredential.fromJson(
-                Map<String, dynamic>.from(item),
-              ))
-          .where((item) => item.id.isNotEmpty)
-          .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    } catch (_) {
-      return [];
+      if (decoded is! List || decoded.any((entry) => entry is! Map)) {
+        throw const FormatException('Invalid credential index.');
+      }
+      final credentials = decoded
+          .map(
+            (item) => LocalCredential.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList();
+      if (credentials.any((item) => item.id.isEmpty)) {
+        throw const FormatException('Invalid credential entry.');
+      }
+      credentials.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return credentials;
+    } on FormatException {
+      throw StateError(
+        'O índice seguro de credenciais está inválido. Nenhum registo foi alterado; restaure um backup válido antes de adicionar ou remover credenciais.',
+      );
     }
   }
 
