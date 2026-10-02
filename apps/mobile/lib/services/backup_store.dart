@@ -113,6 +113,25 @@ class BackupStore {
       for (final key in keys)
         if (all[key] != null) key: all[key]!,
     };
+    final credentialsRaw = values['karta.local_credentials.v1'];
+    if (credentialsRaw != null && credentialsRaw.isNotEmpty) {
+      try {
+        final credentials = jsonDecode(credentialsRaw);
+        if (credentials is! List ||
+            credentials.any(
+              (item) =>
+                  item is! Map ||
+                  item['id'] is! String ||
+                  (item['id'] as String).isEmpty,
+            )) {
+          throw const FormatException('Credenciais inválidas.');
+        }
+      } on FormatException {
+        throw const FormatException(
+          'As credenciais locais precisam de recuperação antes de criar um novo backup.',
+        );
+      }
+    }
     final index =
         jsonDecode(values['karta.document_vault.index.v1'] ?? '[]') as List;
     final files = <String, String>{};
