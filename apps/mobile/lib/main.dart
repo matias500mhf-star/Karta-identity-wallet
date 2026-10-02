@@ -38,39 +38,114 @@ class KartaApp extends StatelessWidget {
 }
 
 class WalletGate extends StatefulWidget {
-  const WalletGate({super.key});
+  const WalletGate({super.key, this.sessionStore, this.backupStore});
+
+  final SessionStore? sessionStore;
+  final BackupStore? backupStore;
 
   @override
   State<WalletGate> createState() => _WalletGateState();
 }
 
 class _WalletGateState extends State<WalletGate> {
-  final SessionStore store = SessionStore();
+  late final SessionStore store;
+  late final BackupStore backupStore;
   bool loading = true;
   bool created = false;
+  String? loadError;
 
   @override
   void initState() {
     super.initState();
+    store = widget.sessionStore ?? SessionStore();
+    backupStore = widget.backupStore ?? BackupStore();
     _load();
   }
 
   Future<void> _load() async {
-    await BackupStore().recoverInterruptedRestore();
-    final exists = await store.walletCreated();
-    if (!mounted) {
-      return;
-    }
     setState(() {
-      created = exists;
-      loading = false;
+      loading = true;
+      loadError = null;
     });
+    try {
+      await backupStore.recoverInterruptedRestore();
+      final exists = await store.walletCreated();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        created = exists;
+        loading = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        loadError =
+            'Não foi possível verificar o estado da carteira com segurança. Nenhum dado foi alterado.';
+        loading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    if (loadError != null) {
+      return Scaffold(
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(28),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(28),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.sync_problem_rounded,
+                          size: 44,
+                          color: HmatiasBrand.blue,
+                        ),
+                        const SizedBox(height: 18),
+                        const Text(
+                          'A KARTA precisa de atenção',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          loadError!,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: HmatiasBrand.muted,
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        FilledButton.tonalIcon(
+                          onPressed: _load,
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('Tentar novamente'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
     }
     return created ? UnlockPage(store: store) : WelcomePage(store: store);
   }
