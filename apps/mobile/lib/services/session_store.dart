@@ -56,7 +56,6 @@ class SessionStore {
       await _savePin(pin);
       await _storage.write(key: _nameKey, value: name);
       await _storage.write(key: _walletCreatedKey, value: 'true');
-      await _storage.delete(key: _walletCreatePendingKey);
     } catch (error, stackTrace) {
       try {
         await _clearIncompleteWalletCreation();
@@ -65,6 +64,15 @@ class SessionStore {
         // removed, will trigger another safe cleanup on the next startup.
       }
       Error.throwWithStackTrace(error, stackTrace);
+    }
+
+    // wallet_created is the commit point. Failure to remove only the marker
+    // must never roll back an otherwise complete wallet; startup recovery can
+    // safely remove a stale marker after confirming the committed state.
+    try {
+      await _storage.delete(key: _walletCreatePendingKey);
+    } catch (_) {
+      // Intentionally leave the marker for recoverInterruptedWalletCreation().
     }
   }
 
