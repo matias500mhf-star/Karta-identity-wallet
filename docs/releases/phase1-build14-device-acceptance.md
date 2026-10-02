@@ -63,7 +63,7 @@ From the approved Build 14 commit:
 cd apps/mobile
 flutter create --platforms=android --android-language=kotlin --project-name=karta_wallet --org=com.karta.identity --no-pub .
 python3 scripts/install_android.py
-cp /OWNER-CONTROLLED-PATH/karta-upload.jks android/app/karta-upload.jks
+export KARTA_KEYSTORE_PATH='/OWNER-CONTROLLED-PATH/karta-upload.jks'
 export KARTA_KEY_ALIAS='karta-upload'
 export KARTA_KEYSTORE_PASSWORD='...'
 export KARTA_KEY_PASSWORD='...'
@@ -74,7 +74,7 @@ flutter test
 flutter build apk --release
 ```
 
-Use a trusted shell/session and avoid storing the three secret environment-variable values in screenshots, release notes or logs.
+Use a trusted shell/session. The keystore remains outside the repository working tree; do not copy it into `android/`. Avoid storing the secret environment-variable values in screenshots, release notes, shell history or logs.
 
 ## C. Verify the signed artifact before installation
 
