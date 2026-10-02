@@ -33,7 +33,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
 
       expect(
-        find.textContaining('Não foi possível criar a carteira com segurança'),
+        find.textContaining('Não foi possível concluir a criação da carteira'),
         findsOneWidget,
       );
 
