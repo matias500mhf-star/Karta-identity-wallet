@@ -32,6 +32,11 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 50));
 
+      await tester.scrollUntilVisible(
+        find.text('As credenciais precisam de recuperação'),
+        400,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(
         find.text('As credenciais precisam de recuperação'),
         findsOneWidget,
@@ -41,6 +46,11 @@ void main() {
         findsOneWidget,
       );
 
+      await tester.scrollUntilVisible(
+        find.text('Adicionar credencial local'),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
       final addButton = tester.widget<FilledButton>(
         find.widgetWithText(FilledButton, 'Adicionar credencial local'),
       );
