@@ -104,6 +104,8 @@ class DocumentStore {
     return _readIndex();
   }
 
+  bool get hasIndexCorruption => _indexCorrupted;
+
   Future<List<VaultDocument>> _readIndex() async {
     final raw = await _secure.read(key: _indexKey);
     if (raw == null || raw.isEmpty) {
