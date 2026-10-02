@@ -25,6 +25,8 @@ class DocumentVaultPage extends StatefulWidget {
 class _DocumentVaultPageState extends State<DocumentVaultPage> {
   List<VaultDocument> documents = [];
   bool loading = true;
+  bool indexCorrupted = false;
+  String? loadError;
   String query = '';
   String filter = 'Todos';
 
@@ -35,17 +37,32 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
   }
 
   Future<void> _load() async {
-    final items = await widget.store.list();
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      documents = items;
-      if (filter != 'Todos' && !items.any((item) => item.type == filter)) {
-        filter = 'Todos';
+    try {
+      final items = await widget.store.list();
+      if (!mounted) {
+        return;
       }
-      loading = false;
-    });
+      setState(() {
+        documents = items;
+        indexCorrupted = widget.store.hasIndexCorruption;
+        loadError = null;
+        if (filter != 'Todos' && !items.any((item) => item.type == filter)) {
+          filter = 'Todos';
+        }
+        loading = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        documents = [];
+        indexCorrupted = false;
+        loadError =
+            'Não foi possível abrir o cofre com segurança. Nenhum documento foi alterado.';
+        loading = false;
+      });
+    }
   }
 
   Future<void> _add() async {
@@ -68,6 +85,44 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
     if (changed == true) {
       await _load();
     }
+  }
+
+  Widget _recoveryCard({
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+        child: Column(
+          children: [
+            Icon(icon, color: HmatiasBrand.blue, size: 40),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: HmatiasBrand.muted,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 18),
+            FilledButton.tonalIcon(
+              onPressed: _load,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -100,12 +155,13 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
           ),
           const SizedBox(height: 18),
           FilledButton.icon(
-            onPressed: _add,
+            onPressed: indexCorrupted || loadError != null ? null : _add,
             icon: const Icon(Icons.document_scanner_outlined),
             label: const Text('Adicionar documento'),
           ),
           const SizedBox(height: 18),
           TextField(
+            enabled: !indexCorrupted && loadError == null,
             onChanged: (value) => setState(() => query = value),
             decoration: const InputDecoration(
               hintText: 'Pesquisar por nome ou tipo',
@@ -138,6 +194,20 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
                 padding: EdgeInsets.all(30),
                 child: CircularProgressIndicator(),
               ),
+            )
+          else if (loadError != null)
+            _recoveryCard(
+              icon: Icons.sync_problem_rounded,
+              title: 'Não foi possível abrir o cofre',
+              message:
+                  '${loadError!} Tente novamente. Se o problema continuar, use um backup cifrado válido.',
+            )
+          else if (indexCorrupted)
+            _recoveryCard(
+              icon: Icons.warning_amber_rounded,
+              title: 'O cofre precisa de recuperação',
+              message:
+                  'O índice seguro dos documentos está inválido. A KARTA não alterou os ficheiros. Restaure um backup cifrado válido antes de adicionar ou apagar documentos.',
             )
           else if (documents.isEmpty)
             const KartaEmptyState(
