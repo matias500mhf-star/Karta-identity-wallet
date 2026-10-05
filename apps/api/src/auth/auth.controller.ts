@@ -51,7 +51,10 @@ export class AuthController {
   async remove(@Req() req: { user: { sub: string } }, @Body() dto: DeleteAccountDto) {
     const user = await this.prisma.user.findUnique({ where: { id: req.user.sub } });
     if (!user || !await this.passwords.verify(dto.password, user.passwordHash)) throw new UnauthorizedException();
-    await this.prisma.user.delete({ where: { id: user.id } });
+    await this.prisma.$transaction([
+      this.prisma.auditLog.deleteMany({ where: { userId: user.id } }),
+      this.prisma.user.delete({ where: { id: user.id } }),
+    ]);
     return { deleted: true };
   }
 }
