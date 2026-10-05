@@ -1,5 +1,9 @@
 name: KARTA API CI
 
+concurrency:
+  group: karta-api-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main, 'feature/**', 'security/**', 'release/**']
