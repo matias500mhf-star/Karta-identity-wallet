@@ -31,7 +31,7 @@ jobs:
         run: flutter --version
 
       - name: Validate release helper scripts
-        run: python3 -m py_compile scripts/install_android.py scripts/configure_release_signing.py scripts/test_configure_release_signing.py scripts/prepare_1_0_release.py scripts/test_prepare_1_0_release.py scripts/verify_release_artifact.py
+        run: python3 -m py_compile scripts/install_android.py scripts/configure_release_signing.py scripts/test_configure_release_signing.py scripts/prepare_1_0_release.py scripts/test_prepare_1_0_release.py scripts/verify_release_artifact.py scripts/verify_release_bundle.py
 
       - name: Test release preparation helpers
         run: |
