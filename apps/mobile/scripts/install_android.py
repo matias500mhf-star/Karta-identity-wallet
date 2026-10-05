@@ -37,6 +37,15 @@ text = (
     if 'android:allowBackup=' not in text
     else re.sub(r'android:allowBackup="[^"]*"', 'android:allowBackup="false"', text)
 )
+text = (
+    text.replace('<application', '<application android:usesCleartextTraffic="false"', 1)
+    if 'android:usesCleartextTraffic=' not in text
+    else re.sub(
+        r'android:usesCleartextTraffic="[^"]*"',
+        'android:usesCleartextTraffic="false"',
+        text,
+    )
+)
 
 # Product identity: stable public name plus vector KARTA mark.
 text = re.sub(r'android:label="[^"]*"', 'android:label="KARTA"', text, count=1)
@@ -115,9 +124,28 @@ for styles in (root / 'android/app/src/main/res').glob('values*/styles.xml'):
     styles.write_text(source)
 
 build = root / 'android/app/build.gradle.kts'
-build.write_text(
-    build.read_text().replace(
-        'minSdk = flutter.minSdkVersion',
-        'minSdk = maxOf(24, flutter.minSdkVersion)',
-    )
+build_text = build.read_text()
+build_text = build_text.replace(
+    'compileSdk = flutter.compileSdkVersion',
+    'compileSdk = maxOf(36, flutter.compileSdkVersion)',
 )
+build_text = build_text.replace(
+    'minSdk = flutter.minSdkVersion',
+    'minSdk = maxOf(24, flutter.minSdkVersion)',
+)
+build_text = build_text.replace(
+    'targetSdk = flutter.targetSdkVersion',
+    'targetSdk = maxOf(36, flutter.targetSdkVersion)',
+)
+required_gradle = (
+    'compileSdk = maxOf(36, flutter.compileSdkVersion)',
+    'minSdk = maxOf(24, flutter.minSdkVersion)',
+    'targetSdk = maxOf(36, flutter.targetSdkVersion)',
+)
+missing_gradle = [entry for entry in required_gradle if entry not in build_text]
+if missing_gradle:
+    raise SystemExit(
+        'Android scaffold is incompatible with KARTA release patching: '
+        + ', '.join(missing_gradle)
+    )
+build.write_text(build_text)

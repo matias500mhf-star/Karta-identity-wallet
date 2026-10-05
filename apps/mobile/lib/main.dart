@@ -12,6 +12,8 @@ import 'package:flutter/material.dart';
 
 import 'document_vault_page.dart';
 import 'profile_page.dart';
+import 'privacy_page.dart';
+import 'pdf_viewer_page.dart';
 import 'services/credential_store.dart';
 import 'services/document_store.dart';
 import 'services/session_store.dart';
@@ -971,6 +973,31 @@ class _WalletPageState extends State<WalletPage> {
             ),
           ),
         ),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Privacidade KARTA'),
+            subtitle: const Text('Dados locais, backup, conta e eliminação'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push<void>(
+              context,
+              MaterialPageRoute(builder: (_) => const KartaPrivacyPage()),
+            ),
+          ),
+        ),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.article_outlined),
+            title: const Text('Licenças de software'),
+            subtitle: const Text('Flutter e componentes open-source'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showLicensePage(
+              context: context,
+              applicationName: 'KARTA Identity Wallet',
+              applicationLegalese: '© 2026 HMATIAS · Software proprietário',
+            ),
+          ),
+        ),
         const Card(
           child: ListTile(
             leading: Icon(Icons.cloud_off_outlined),
@@ -1037,6 +1064,11 @@ class _WalletPageState extends State<WalletPage> {
     }
     await credentialStore.clear();
     await documentStore.clear();
+    try {
+      await documentChannel.invokeMethod<void>('clearShareCache');
+    } catch (_) {
+      // Cache cleanup is best-effort and must not prevent local wallet deletion.
+    }
     await widget.store.deleteWallet();
     SessionSecurity.reset();
     if (!mounted) {

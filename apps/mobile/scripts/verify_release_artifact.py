@@ -123,7 +123,7 @@ def main() -> int:
         return 1
 
     print("\nRELEASE GATE: PASS")
-    print("Identity, version and permanent signing certificate match the expected Build 14 gate.")
+    print("Identity, version and permanent signing certificate match the expected release gate.")
     return 0
 
 
