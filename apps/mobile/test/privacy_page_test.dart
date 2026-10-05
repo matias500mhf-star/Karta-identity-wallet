@@ -26,6 +26,11 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     expect(find.textContaining('geral@comercialhmatiasps.com'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.textContaining('comercialhmatiasps.com/karta-privacidade.html'),
+      350,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(
       find.textContaining('comercialhmatiasps.com/karta-privacidade.html'),
       findsOneWidget,
