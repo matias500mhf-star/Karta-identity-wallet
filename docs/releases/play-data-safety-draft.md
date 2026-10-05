@@ -7,6 +7,7 @@ This is a release-preparation worksheet, not the submitted Play Console form. Co
 - Developer: HMATIAS – Prestação de Serviços SU, LDA
 - Privacy policy: https://comercialhmatiasps.com/karta-privacidade.html
 - Account deletion: available in-app when the optional online account service is configured.
+- External account-deletion resource: https://comercialhmatiasps.com/karta-apagar-conta.html
 
 ## Current mobile build facts
 - Local-first wallet; an online account is optional.
@@ -54,4 +55,5 @@ Before selecting "not shared" in Play Console, confirm all production infrastruc
 - [ ] Production backend/subprocessors are confirmed.
 - [ ] Final dependency tree checked for analytics/ads/device identifiers.
 - [ ] Play Data Safety answers reviewed against the final production binary.
-- [ ] Account-deletion flow tested against production/staging backend.
+- [ ] In-app account-deletion flow tested against production/staging backend.
+- [ ] External account-deletion URL is live and accepts requests without requiring the app.
