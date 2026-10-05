@@ -2,7 +2,7 @@ name: KARTA Security Baseline
 
 on:
   push:
-    branches: [main, 'feature/**', 'fix/**', 'security/**']
+    branches: [main, 'feature/**', 'fix/**', 'security/**', 'release/**']
   pull_request:
     branches: [main, 'release/**', 'feature/**']
 
@@ -37,6 +37,15 @@ jobs:
           if git grep -nE -- '-----BEGIN ([A-Z0-9 ]+ )?PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{50,}|AKIA[0-9A-Z]{16}' -- . \
             ':!*.md' ':!*.example'; then
             echo "::error title=Possible secret committed::Rotate the credential and remove it from repository history."
+            exit 1
+          fi
+
+      - name: Enforce offline production signing
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git grep -nE -- 'KARTA_ANDROID_KEYSTORE_B64|base64[^\n]*karta-upload\.jks|android/app/karta-upload\.jks' -- '.github/workflows/*.yml' '.github/workflows/*.yaml'; then
+            echo "::error title=Production signing must stay offline::Do not restore or encode the permanent KARTA keystore in GitHub Actions."
             exit 1
           fi
 
