@@ -48,6 +48,7 @@ def main() -> int:
     )
     parser.add_argument("--expected-version-code", default="14")
     parser.add_argument("--expected-version-name", default="0.9.0-rc.1")
+    parser.add_argument("--expected-target-sdk", default="36")
     parser.add_argument(
         "--expected-cert-sha256",
         default=(
@@ -93,6 +94,17 @@ def main() -> int:
             f"versionName mismatch: expected {args.expected_version_name}, got {version_name}"
         )
 
+    target_match = re.search(r"targetSdkVersion:'([^']+)'", badging)
+    if not target_match:
+        failures.append("targetSdkVersion missing from APK badging")
+        target_sdk = "unknown"
+    else:
+        target_sdk = target_match.group(1)
+        if target_sdk != str(args.expected_target_sdk):
+            failures.append(
+                f"targetSdk mismatch: expected {args.expected_target_sdk}, got {target_sdk}"
+            )
+
     signer_output = run([apksigner, "verify", "--verbose", "--print-certs", str(apk)])
     cert_match = re.search(
         r"Signer #1 certificate SHA-256 digest:\s*([0-9A-Fa-f:]+)",
@@ -113,6 +125,7 @@ def main() -> int:
     print(f"APK: {apk}")
     print(f"Package: {package_name}")
     print(f"Version: {version_name} ({version_code})")
+    print(f"Target SDK: {target_sdk}")
     print(f"Certificate SHA-256: {cert_match.group(1).upper()}")
     print(f"APK SHA-256: {artifact_hash}")
 
@@ -123,7 +136,10 @@ def main() -> int:
         return 1
 
     print("\nRELEASE GATE: PASS")
-    print("Identity, version and permanent signing certificate match the expected Build 14 gate.")
+    print(
+        "Identity, version, target SDK and permanent signing certificate "
+        "match the expected Build 14 gate."
+    )
     return 0
 
 

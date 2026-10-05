@@ -71,20 +71,29 @@ Use a trusted shell/session. Avoid leaving signing passwords in shell history, s
 
 ## 4. Verify before installation or upload
 
-Verify the APK with the repository gate:
+Verify both release artifacts with the repository gates:
 
 ```bash
 python3 scripts/verify_release_artifact.py \
   build/app/outputs/flutter-apk/app-release.apk
+
+python3 scripts/verify_release_bundle.py \
+  build/app/outputs/bundle/release/app-release.aab
 ```
 
-The gate must report `RELEASE GATE: PASS` and confirm:
+The APK gate must report `RELEASE GATE: PASS` and confirm:
 - package identity;
 - version name/code;
+- target SDK;
 - the permanent KARTA certificate SHA-256;
 - APK SHA-256.
 
-Record hashes for both APK and AAB in the release record.
+The bundle gate must report `RELEASE BUNDLE GATE: PASS` and confirm:
+- the AAB JAR signature is valid;
+- the permanent KARTA certificate SHA-256 matches;
+- AAB SHA-256 is printed for the release record.
+
+Do not install or upload release artifacts unless the corresponding gates pass.
 
 ## 5. Build 13 → Build 14 update test
 

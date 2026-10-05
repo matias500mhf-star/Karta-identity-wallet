@@ -23,7 +23,7 @@ jobs:
           cache: true
 
       - name: Validate release helper scripts
-        run: python3 -m py_compile scripts/install_android.py scripts/configure_release_signing.py scripts/test_configure_release_signing.py scripts/verify_release_artifact.py
+        run: python3 -m py_compile scripts/install_android.py scripts/configure_release_signing.py scripts/test_configure_release_signing.py scripts/verify_release_artifact.py scripts/verify_release_bundle.py
 
       - name: Verify offline signing configuration
         run: python3 scripts/test_configure_release_signing.py
@@ -41,6 +41,7 @@ jobs:
             docs/releases/phase1-build14-device-acceptance.md
             docs/releases/android-signing.md
 
-          Build the release on a trusted owner-controlled machine and verify it with:
+          Build the release on a trusted owner-controlled machine and verify both artifacts with:
             python3 scripts/verify_release_artifact.py build/app/outputs/flutter-apk/app-release.apk
+            python3 scripts/verify_release_bundle.py build/app/outputs/bundle/release/app-release.aab
           EOF
