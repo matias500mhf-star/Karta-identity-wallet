@@ -72,6 +72,10 @@ jobs:
       - name: Build debug APK
         run: flutter build apk --debug
 
+      - name: Verify Android 16 KB native compatibility
+        shell: bash
+        run: bash scripts/check_android_16kb.sh build/app/outputs/flutter-apk/app-debug.apk
+
       - name: Upload Phase 1 build 14 debug APK
         uses: actions/upload-artifact@v4
         with:
