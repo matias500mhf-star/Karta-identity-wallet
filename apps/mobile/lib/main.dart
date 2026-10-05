@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'document_vault_page.dart';
 import 'profile_page.dart';
 import 'privacy_page.dart';
+import 'pdf_viewer_page.dart';
 import 'services/credential_store.dart';
 import 'services/document_store.dart';
 import 'services/session_store.dart';
@@ -1050,6 +1051,11 @@ class _WalletPageState extends State<WalletPage> {
     }
     await credentialStore.clear();
     await documentStore.clear();
+    try {
+      await documentChannel.invokeMethod<void>('clearShareCache');
+    } catch (_) {
+      // Cache cleanup is best-effort and must not prevent local wallet deletion.
+    }
     await widget.store.deleteWallet();
     SessionSecurity.reset();
     if (!mounted) {
