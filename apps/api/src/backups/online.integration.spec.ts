@@ -35,9 +35,16 @@ describeDB('online account and encrypted backups (PostgreSQL)', () => {
     await request(server).post('/api/v1/auth/logout').auth(ta, { type: 'bearer' }).expect(201);
     await request(server).get('/api/v1/backups/latest').auth(ta, { type: 'bearer' }).expect(401);
     const ta2 = await login(a);
+    const userA = await db.user.findUnique({ where: { email: a } });
+    expect(userA).not.toBeNull();
+    const deletionAuditAction = `account-delete-${suffix}`;
+    await db.auditLog.create({
+      data: { userId: userA!.id, action: deletionAuditAction },
+    });
     await request(server).delete('/api/v1/auth/account').auth(ta2, { type: 'bearer' }).send({ password: 'wrong' }).expect(401);
     await request(server).delete('/api/v1/auth/account').auth(ta2, { type: 'bearer' }).send({ password }).expect(200);
     expect(await db.user.findUnique({ where: { email: a } })).toBeNull();
+    expect(await db.auditLog.findFirst({ where: { action: deletionAuditAction } })).toBeNull();
     await request(server).get('/api/v1/backups/latest').auth(ta2, { type: 'bearer' }).expect(401);
   }, 30000);
 });
