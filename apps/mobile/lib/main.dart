@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 
 import 'document_vault_page.dart';
 import 'profile_page.dart';
+import 'privacy_page.dart';
 import 'services/credential_store.dart';
 import 'services/document_store.dart';
 import 'services/session_store.dart';
@@ -968,6 +969,18 @@ class _WalletPageState extends State<WalletPage> {
             onTap: () => Navigator.push<void>(
               context,
               MaterialPageRoute(builder: (_) => const BackupPage()),
+            ),
+          ),
+        ),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Privacidade KARTA'),
+            subtitle: const Text('Dados locais, backup, conta e eliminação'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push<void>(
+              context,
+              MaterialPageRoute(builder: (_) => const KartaPrivacyPage()),
             ),
           ),
         ),
