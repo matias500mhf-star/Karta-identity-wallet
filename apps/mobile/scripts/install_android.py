@@ -115,9 +115,17 @@ for styles in (root / 'android/app/src/main/res').glob('values*/styles.xml'):
     styles.write_text(source)
 
 build = root / 'android/app/build.gradle.kts'
-build.write_text(
-    build.read_text().replace(
-        'minSdk = flutter.minSdkVersion',
-        'minSdk = maxOf(24, flutter.minSdkVersion)',
-    )
+build_text = build.read_text()
+build_text = build_text.replace(
+    'compileSdk = flutter.compileSdkVersion',
+    'compileSdk = maxOf(36, flutter.compileSdkVersion)',
 )
+build_text = build_text.replace(
+    'minSdk = flutter.minSdkVersion',
+    'minSdk = maxOf(24, flutter.minSdkVersion)',
+)
+build_text = build_text.replace(
+    'targetSdk = flutter.targetSdkVersion',
+    'targetSdk = maxOf(36, flutter.targetSdkVersion)',
+)
+build.write_text(build_text)
