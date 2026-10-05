@@ -1,5 +1,9 @@
 name: KARTA Mobile CI
 
+concurrency:
+  group: karta-mobile-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main, 'feature/**', 'fix/**', 'security/**', 'release/**']
