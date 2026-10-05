@@ -33,8 +33,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: apps/api/package.json
+          cache-dependency-path: apps/api/package-lock.json
       - run: npm ci
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
       - run: npx prisma validate
       - run: npx prisma generate
       - run: npx prisma migrate deploy
