@@ -985,6 +985,19 @@ class _WalletPageState extends State<WalletPage> {
             ),
           ),
         ),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.article_outlined),
+            title: const Text('Licenças de software'),
+            subtitle: const Text('Flutter e componentes open-source'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => showLicensePage(
+              context: context,
+              applicationName: 'KARTA Identity Wallet',
+              applicationLegalese: '© 2026 HMATIAS · Software proprietário',
+            ),
+          ),
+        ),
         const Card(
           child: ListTile(
             leading: Icon(Icons.cloud_off_outlined),
