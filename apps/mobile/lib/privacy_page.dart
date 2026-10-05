@@ -59,7 +59,7 @@ class PrivacyPage extends StatelessWidget {
             _PrivacySection(
               title: '7. Conservação e eliminação',
               body:
-                  'Os dados locais permanecem no dispositivo até serem removidos pelo utilizador, pela função de apagar a carteira ou pela desinstalação da app, de acordo com o comportamento do Android. Quando existe uma conta online, a aplicação disponibiliza funções para apagar o backup online e eliminar a conta; a eliminação da conta remove os dados associados mantidos pelo serviço.',
+                  'Os dados locais permanecem no dispositivo até serem removidos pelo utilizador, pela função de apagar a carteira ou pela desinstalação da app, de acordo com o comportamento do Android. Quando existe uma conta online, a aplicação disponibiliza funções para apagar o backup online e eliminar a conta; a eliminação da conta remove os dados associados mantidos pelo serviço. Sem acesso à app, o pedido pode ser iniciado em https://comercialhmatiasps.com/karta-apagar-conta.html.',
             ),
             _PrivacySection(
               title: '8. Segurança',
