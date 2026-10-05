@@ -31,10 +31,12 @@ jobs:
         run: flutter --version
 
       - name: Validate release helper scripts
-        run: python3 -m py_compile scripts/install_android.py scripts/configure_release_signing.py scripts/test_configure_release_signing.py scripts/verify_release_artifact.py
+        run: python3 -m py_compile scripts/install_android.py scripts/configure_release_signing.py scripts/test_configure_release_signing.py scripts/prepare_1_0_release.py scripts/test_prepare_1_0_release.py scripts/verify_release_artifact.py
 
-      - name: Test external release keystore configuration
-        run: python3 scripts/test_configure_release_signing.py
+      - name: Test release preparation helpers
+        run: |
+          python3 scripts/test_configure_release_signing.py
+          python3 scripts/test_prepare_1_0_release.py
 
       - name: Generate Android platform scaffold
         run: flutter create --platforms=android --android-language=kotlin --project-name=karta_wallet --org=com.karta.identity --no-pub .
