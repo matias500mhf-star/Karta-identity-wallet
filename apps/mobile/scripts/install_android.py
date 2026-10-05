@@ -38,6 +38,22 @@ text = (
     else re.sub(r'android:allowBackup="[^"]*"', 'android:allowBackup="false"', text)
 )
 
+# KARTA online traffic is HTTPS-only. Block accidental cleartext transport at
+# the Android platform layer as a second line of defence.
+text = (
+    text.replace(
+        '<application',
+        '<application android:usesCleartextTraffic="false"',
+        1,
+    )
+    if 'android:usesCleartextTraffic=' not in text
+    else re.sub(
+        r'android:usesCleartextTraffic="[^"]*"',
+        'android:usesCleartextTraffic="false"',
+        text,
+    )
+)
+
 # Product identity: stable public name plus vector KARTA mark.
 text = re.sub(r'android:label="[^"]*"', 'android:label="KARTA"', text, count=1)
 if 'android:icon=' in text:
@@ -115,9 +131,17 @@ for styles in (root / 'android/app/src/main/res').glob('values*/styles.xml'):
     styles.write_text(source)
 
 build = root / 'android/app/build.gradle.kts'
-build.write_text(
-    build.read_text().replace(
-        'minSdk = flutter.minSdkVersion',
-        'minSdk = maxOf(24, flutter.minSdkVersion)',
-    )
+gradle = build.read_text()
+gradle = gradle.replace(
+    'compileSdk = flutter.compileSdkVersion',
+    'compileSdk = maxOf(36, flutter.compileSdkVersion)',
 )
+gradle = gradle.replace(
+    'minSdk = flutter.minSdkVersion',
+    'minSdk = maxOf(24, flutter.minSdkVersion)',
+)
+gradle = gradle.replace(
+    'targetSdk = flutter.targetSdkVersion',
+    'targetSdk = maxOf(36, flutter.targetSdkVersion)',
+)
+build.write_text(gradle)
