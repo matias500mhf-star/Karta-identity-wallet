@@ -78,6 +78,10 @@ jobs:
       - name: Build unsigned release APK
         run: flutter build apk --release
 
+      - name: Verify Android 16 KB native compatibility
+        shell: bash
+        run: bash scripts/check_android_16kb.sh build/app/outputs/flutter-apk/app-release.apk
+
       - name: Build unsigned release AAB
         run: flutter build appbundle --release
 
