@@ -30,9 +30,9 @@ class MainActivity : FlutterFragmentActivity() {
         cleanShares()
     }
 
-    private fun cleanShares() {
+    private fun cleanShares(force: Boolean = false) {
         File(cacheDir, "karta-shares").listFiles()?.filter {
-            System.currentTimeMillis() - it.lastModified() > 3600000
+            force || System.currentTimeMillis() - it.lastModified() > 3600000
         }?.forEach { it.delete() }
     }
 
@@ -78,6 +78,11 @@ class MainActivity : FlutterFragmentActivity() {
                         shared?.delete()
                         runOnUiThread { result.error("share", "Não foi possível preparar a partilha.", null) }
                     }
+                }
+            } else if (call.method == "clearShareCache") {
+                worker.execute {
+                    cleanShares(force = true)
+                    runOnUiThread { result.success(null) }
                 }
             } else if (call.method == "exportFile") {
                 if (exportResult != null) {
