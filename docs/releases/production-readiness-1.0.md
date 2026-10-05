@@ -116,6 +116,8 @@ On the exact candidate that will become 1.0:
 - [ ] Force pushes and branch deletion blocked on protected release branches.
 - [ ] GitHub/Codex/Vercel access revalidated after repository visibility changes.
 - [x] Secret/signing-material repository security gate active.
+- [x] Dependabot configured for npm, Dart/pub and GitHub Actions.
+- [x] API CI blocks high/critical production dependency audit findings.
 
 ## 10. Production operations after launch
 - [x] No extra telemetry SDK is required for launch; privacy surface stays minimal.
