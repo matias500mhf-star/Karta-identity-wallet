@@ -51,6 +51,15 @@ jobs:
           test -f android/app/src/main/res/drawable/karta_launcher.xml
           test -f android/app/src/main/res/drawable/launch_background.xml
 
+      - name: Verify Android 16 and transport-security baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -n 'compileSdk = maxOf(36, flutter.compileSdkVersion)' android/app/build.gradle.kts
+          grep -n 'targetSdk = maxOf(36, flutter.targetSdkVersion)' android/app/build.gradle.kts
+          grep -n 'android:allowBackup="false"' android/app/src/main/AndroidManifest.xml
+          grep -n 'android:usesCleartextTraffic="false"' android/app/src/main/AndroidManifest.xml
+
       - name: Resolve dependencies
         run: flutter pub get
 
