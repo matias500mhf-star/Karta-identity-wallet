@@ -1,8 +1,12 @@
 name: KARTA Unsigned Android Release
 
+concurrency:
+  group: karta-unsigned-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
 on:
   push:
-    branches: ['release/**']
+    branches: ['release/0.9-rc1']
     paths:
       - 'apps/mobile/**'
       - '.github/workflows/unsigned-android-release.yml'
