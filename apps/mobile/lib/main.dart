@@ -7,6 +7,7 @@ import 'online_page.dart';
 import 'services/backup_store.dart';
 import 'premium_widgets.dart';
 import 'brand_theme.dart';
+import 'privacy_page.dart';
 
 import 'package:flutter/material.dart';
 
@@ -984,6 +985,18 @@ class _WalletPageState extends State<WalletPage> {
             title: Text('Document Vault'),
             subtitle: Text(
               'Ficheiros cifrados com AES-GCM no armazenamento privado da app',
+            ),
+          ),
+        ),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Privacidade e dados'),
+            subtitle: const Text('Como a KARTA trata e protege os seus dados'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push<void>(
+              context,
+              MaterialPageRoute(builder: (_) => const PrivacyPage()),
             ),
           ),
         ),
