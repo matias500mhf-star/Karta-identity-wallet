@@ -3,6 +3,7 @@ import 'premium_widgets.dart';
 import 'services/qr_payload.dart';
 import 'pdf_viewer_page.dart';
 import 'brand_theme.dart';
+import 'document_validity_ui.dart';
 
 import 'dart:typed_data';
 
@@ -24,6 +25,8 @@ class DocumentVaultPage extends StatefulWidget {
 class _DocumentVaultPageState extends State<DocumentVaultPage> {
   List<VaultDocument> documents = [];
   bool loading = true;
+  bool indexCorrupted = false;
+  String? loadError;
   String query = '';
   String filter = 'Todos';
 
@@ -34,17 +37,32 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
   }
 
   Future<void> _load() async {
-    final items = await widget.store.list();
-    if (!mounted) {
-      return;
-    }
-    setState(() {
-      documents = items;
-      if (filter != 'Todos' && !items.any((item) => item.type == filter)) {
-        filter = 'Todos';
+    try {
+      final items = await widget.store.list();
+      if (!mounted) {
+        return;
       }
-      loading = false;
-    });
+      setState(() {
+        documents = items;
+        indexCorrupted = widget.store.hasIndexCorruption;
+        loadError = null;
+        if (filter != 'Todos' && !items.any((item) => item.type == filter)) {
+          filter = 'Todos';
+        }
+        loading = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        documents = [];
+        indexCorrupted = false;
+        loadError =
+            'Não foi possível abrir o cofre com segurança. Nenhum documento foi alterado.';
+        loading = false;
+      });
+    }
   }
 
   Future<void> _add() async {
@@ -67,6 +85,44 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
     if (changed == true) {
       await _load();
     }
+  }
+
+  Widget _recoveryCard({
+    required IconData icon,
+    required String title,
+    required String message,
+  }) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+        child: Column(
+          children: [
+            Icon(icon, color: HmatiasBrand.blue, size: 40),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: HmatiasBrand.muted,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 18),
+            FilledButton.tonalIcon(
+              onPressed: _load,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Tentar novamente'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -99,12 +155,13 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
           ),
           const SizedBox(height: 18),
           FilledButton.icon(
-            onPressed: _add,
+            onPressed: indexCorrupted || loadError != null ? null : _add,
             icon: const Icon(Icons.document_scanner_outlined),
             label: const Text('Adicionar documento'),
           ),
           const SizedBox(height: 18),
           TextField(
+            enabled: !indexCorrupted && loadError == null,
             onChanged: (value) => setState(() => query = value),
             decoration: const InputDecoration(
               hintText: 'Pesquisar por nome ou tipo',
@@ -138,6 +195,20 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
                 child: CircularProgressIndicator(),
               ),
             )
+          else if (loadError != null)
+            _recoveryCard(
+              icon: Icons.sync_problem_rounded,
+              title: 'Não foi possível abrir o cofre',
+              message:
+                  '${loadError!} Tente novamente. Se o problema continuar, use um backup cifrado válido.',
+            )
+          else if (indexCorrupted)
+            _recoveryCard(
+              icon: Icons.warning_amber_rounded,
+              title: 'O cofre precisa de recuperação',
+              message:
+                  'O índice seguro dos documentos está inválido. A KARTA não alterou os ficheiros. Restaure um backup cifrado válido antes de adicionar ou apagar documentos.',
+            )
           else if (documents.isEmpty)
             const KartaEmptyState(
               icon: Icons.folder_copy_outlined,
@@ -155,6 +226,7 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
               (item) => Card(
                 child: ListTile(
                   onTap: () => _open(item),
+                  isThreeLine: true,
                   leading: Icon(
                     item.type == 'Passaporte'
                         ? Icons.menu_book_outlined
@@ -164,7 +236,17 @@ class _DocumentVaultPageState extends State<DocumentVaultPage> {
                     item.title,
                     style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
-                  subtitle: Text('${item.type} · cópia local não verificada'),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${item.type} · cópia local não verificada'),
+                        const SizedBox(height: 8),
+                        DocumentValidityBadge(document: item, compact: true),
+                      ],
+                    ),
+                  ),
                   trailing: const Icon(Icons.chevron_right),
                 ),
               ),
@@ -195,6 +277,8 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
   final ImagePicker picker = ImagePicker();
   final title = TextEditingController();
   String type = types.first;
+  DateTime? issuedAt;
+  DateTime? expiresAt;
   Uint8List? front;
   Uint8List? back;
   Uint8List? attachment;
@@ -306,11 +390,23 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
       );
       return;
     }
+    if (issuedAt != null &&
+        expiresAt != null &&
+        expiresAt!.isBefore(issuedAt!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('A data de validade não pode ser anterior à emissão.'),
+        ),
+      );
+      return;
+    }
     setState(() => busy = true);
     try {
       await widget.store.add(
         type: type,
         title: title.text.trim().isEmpty ? type : title.text.trim(),
+        issuedAt: issuedAt,
+        expiresAt: expiresAt,
         frontBytes: front,
         backBytes: back,
         attachmentBytes: attachment,
@@ -365,6 +461,22 @@ class _AddDocumentPageState extends State<AddDocumentPage> {
                 labelText: 'Nome opcional',
                 hintText: 'Ex.: Meu BI',
               ),
+            ),
+            const SizedBox(height: 16),
+            DocumentDateField(
+              label: 'Data de emissão',
+              value: issuedAt,
+              lastDate: DateTime.now(),
+              helperText: 'Opcional. Use a data indicada no documento.',
+              onChanged: (value) => setState(() => issuedAt = value),
+            ),
+            const SizedBox(height: 12),
+            DocumentDateField(
+              label: 'Data de validade',
+              value: expiresAt,
+              firstDate: DateTime(1900),
+              helperText: 'Opcional. A KARTA usa esta data para avisos de validade.',
+              onChanged: (value) => setState(() => expiresAt = value),
             ),
             const SizedBox(height: 22),
             _sideCard(
@@ -740,6 +852,34 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
                     fontWeight: FontWeight.w900,
                   ),
                 ),
+                const SizedBox(height: 12),
+                DocumentValidityBadge(document: widget.item),
+                if (widget.item.issuedAt != null || widget.item.expiresAt != null) ...[
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: Column(
+                        children: [
+                          if (widget.item.issuedAt != null)
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.event_available_outlined),
+                              title: const Text('Data de emissão'),
+                              subtitle: Text(kartaDate(widget.item.issuedAt!)),
+                            ),
+                          if (widget.item.expiresAt != null)
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: const Icon(Icons.event_busy_outlined),
+                              title: const Text('Data de validade'),
+                              subtitle: Text(kartaDate(widget.item.expiresAt!)),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 18),
                 if (front != null) ...[
                   const Text(

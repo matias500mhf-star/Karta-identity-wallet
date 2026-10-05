@@ -4,34 +4,61 @@ import 'services/session_store.dart';
 import 'services/biometric_service.dart';
 
 class SecurityPage extends StatefulWidget {
-  const SecurityPage({super.key, required this.store});
+  const SecurityPage({
+    super.key,
+    required this.store,
+    this.biometricService,
+  });
   final SessionStore store;
+  final BiometricService? biometricService;
   @override
   State<SecurityPage> createState() => _SecurityPageState();
 }
 
 class _SecurityPageState extends State<SecurityPage> {
-  final biometric = BiometricService();
+  late final BiometricService biometric;
   final pin = TextEditingController();
   bool enabled = false;
   bool available = false;
   bool busy = true;
   String? message;
+  String? loadError;
+
   @override
   void initState() {
     super.initState();
+    biometric = widget.biometricService ?? BiometricService();
     _load();
   }
 
   Future<void> _load() async {
-    final e = await widget.store.biometricEnabled();
-    final a = await biometric.available();
     if (mounted) {
+      setState(() {
+        busy = true;
+        loadError = null;
+      });
+    }
+    try {
+      final e = await widget.store.biometricEnabled();
+      final a = await biometric.available();
+      if (!mounted) {
+        return;
+      }
       setState(() {
         enabled = e;
         available = a;
-        busy = false;
       });
+    } catch (_) {
+      if (mounted) {
+        setState(
+          () => loadError =
+              'Não foi possível carregar as definições de segurança. Nenhuma configuração foi alterada.',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => busy = false);
+      }
     }
   }
 
@@ -82,37 +109,75 @@ class _SecurityPageState extends State<SecurityPage> {
       children: [
         const Icon(Icons.fingerprint, size: 64),
         const SizedBox(height: 20),
-        Text(
-          enabled ? 'Biometria ativada' : 'Biometria desativada',
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          available
-              ? 'Use a biometria registada neste dispositivo. Qualquer biometria autorizada pelo sistema poderá desbloquear a carteira.'
-              : 'Não foi encontrada biometria disponível. Configure-a nas definições do dispositivo e volte a abrir este ecrã.',
-        ),
-        const SizedBox(height: 20),
-        if (available || enabled) ...[
-          TextField(
-            controller: pin,
-            enabled: !busy,
-            obscureText: true,
-            keyboardType: TextInputType.number,
-            maxLength: 6,
-            decoration: const InputDecoration(
-              labelText: 'Confirme o PIN da KARTA',
+        if (loadError != null)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  const Icon(Icons.sync_problem_rounded, size: 40),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Não foi possível verificar a segurança',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    loadError!,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.tonalIcon(
+                    onPressed: busy ? null : _load,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Tentar novamente'),
+                  ),
+                ],
+              ),
             ),
+          )
+        else ...[
+          Text(
+            enabled ? 'Biometria ativada' : 'Biometria desativada',
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700),
           ),
-          FilledButton(
-            onPressed: busy ? null : _change,
-            child: Text(enabled ? 'Desativar biometria' : 'Ativar biometria'),
+          const SizedBox(height: 12),
+          Text(
+            available
+                ? 'Use a biometria registada neste dispositivo. Qualquer biometria autorizada pelo sistema poderá desbloquear a carteira.'
+                : 'Não foi encontrada biometria disponível. Configure-a nas definições do dispositivo e volte a abrir este ecrã.',
           ),
+          const SizedBox(height: 20),
+          if (available || enabled) ...[
+            TextField(
+              controller: pin,
+              enabled: !busy,
+              obscureText: true,
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: const InputDecoration(
+                labelText: 'Confirme o PIN da KARTA',
+              ),
+            ),
+            FilledButton(
+              onPressed: busy ? null : _change,
+              child: Text(enabled ? 'Desativar biometria' : 'Ativar biometria'),
+            ),
+          ],
+          if (message != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Text(message!),
+            ),
         ],
-        if (message != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Text(message!),
+        if (busy)
+          const Padding(
+            padding: EdgeInsets.only(top: 16),
+            child: LinearProgressIndicator(),
           ),
         const SizedBox(height: 24),
         const ListTile(
