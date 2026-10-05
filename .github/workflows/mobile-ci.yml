@@ -31,7 +31,7 @@ jobs:
         run: flutter --version
 
       - name: Validate release helper scripts
-        run: python3 -m py_compile scripts/install_android.py scripts/configure_release_signing.py scripts/test_configure_release_signing.py scripts/verify_release_artifact.py
+        run: python3 -m py_compile scripts/install_android.py scripts/configure_release_signing.py scripts/test_configure_release_signing.py scripts/verify_release_artifact.py scripts/verify_release_bundle.py
 
       - name: Test external release keystore configuration
         run: python3 scripts/test_configure_release_signing.py
@@ -51,6 +51,15 @@ jobs:
           test -f android/app/src/main/res/drawable/karta_launcher.xml
           test -f android/app/src/main/res/drawable/launch_background.xml
 
+      - name: Verify Android 16 and transport-security baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -n 'compileSdk = maxOf(36, flutter.compileSdkVersion)' android/app/build.gradle.kts
+          grep -n 'targetSdk = maxOf(36, flutter.targetSdkVersion)' android/app/build.gradle.kts
+          grep -n 'android:allowBackup="false"' android/app/src/main/AndroidManifest.xml
+          grep -n 'android:usesCleartextTraffic="false"' android/app/src/main/AndroidManifest.xml
+
       - name: Resolve dependencies
         run: flutter pub get
 
@@ -62,6 +71,10 @@ jobs:
 
       - name: Build debug APK
         run: flutter build apk --debug
+
+      - name: Verify Android 16 KB native compatibility
+        shell: bash
+        run: bash scripts/check_android_16kb.sh build/app/outputs/flutter-apk/app-debug.apk
 
       - name: Upload Phase 1 build 14 debug APK
         uses: actions/upload-artifact@v4
